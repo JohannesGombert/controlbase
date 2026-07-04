@@ -1,0 +1,90 @@
+{
+  "project_name": "ControlBase",
+  "version": "0.1.0",
+  "type": "personal_web_dashboard",
+  "language": "de",
+  "primary_goal": "A private web tool to help the user track health, discipline, finances, purchases, ideas, and CEO focus during a realistic 30-day control plan.",
+  "core_question": "Bin ich heute auf Kurs?",
+  "recommended_stack": {
+    "frontend": "React + Vite",
+    "styling": "TailwindCSS",
+    "routing": "react-router-dom",
+    "charts": "Recharts",
+    "icons": "lucide-react",
+    "backend": "Supabase",
+    "database": "PostgreSQL via Supabase",
+    "auth": "Supabase Auth email magic link or email/password",
+    "hosting": "Netlify Free",
+    "repository": "GitHub"
+  },
+  "mvp_pages": [
+    "Dashboard",
+    "Heute",
+    "Käufe",
+    "Ideen",
+    "Wochenreview"
+  ],
+  "future_pages": [
+    "Gesundheit",
+    "CEO-Fokus",
+    "Finanzen",
+    "Einstellungen",
+    "KI-Auswertung"
+  ],
+  "non_goals_for_mvp": [
+    "No public social features",
+    "No mobile native app",
+    "No Apple Health integration",
+    "No payment system",
+    "No team or multi-tenant product logic beyond Supabase user isolation",
+    "No complex gamification",
+    "No active WHOOP integration in MVP; architecture may be prepared behind feature flag"
+  ],
+  "privacy_level": "private_by_default",
+  "deployment": {
+    "provider": "Netlify",
+    "build_command": "npm run build",
+    "publish_directory": "dist",
+    "environment_variables": [
+      "VITE_SUPABASE_URL",
+      "VITE_SUPABASE_ANON_KEY",
+      "VITE_ENABLE_WHOOP",
+      "WHOOP_CLIENT_ID",
+      "WHOOP_CLIENT_SECRET",
+      "WHOOP_REDIRECT_URI",
+      "SUPABASE_SERVICE_ROLE_KEY"
+    ]
+  },
+  "quality_bar": {
+    "mobile_first": true,
+    "daily_checkin_under_minutes": 2,
+    "german_ui": true,
+    "simple_before_fancy": true,
+    "no_unnecessary_dependencies": true
+  },
+  "future_integrations": {
+    "whoop": {
+      "status": "prepared_optional_extension",
+      "mvp_blocker": false,
+      "requires": [
+        "WHOOP Developer App",
+        "OAuth 2.0",
+        "Netlify Functions",
+        "Supabase server-side token storage"
+      ],
+      "initial_scopes": [
+        "read:recovery",
+        "read:sleep",
+        "read:workout",
+        "read:cycles",
+        "offline_optional"
+      ],
+      "feature_flag": "VITE_ENABLE_WHOOP",
+      "docs": [
+        "docs/WHOOP_INTEGRATION.md",
+        "docs/WHOOP_TASKS.md",
+        "supabase/whoop_schema.sql"
+      ]
+    }
+  }
+}
