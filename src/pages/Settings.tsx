@@ -10,7 +10,7 @@ export function Settings() {
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel>
           <div className="flex items-start justify-between gap-4"><div className="flex gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e7f4ee] text-positive"><Database size={19} /></span><SectionTitle title="Supabase" description="Authentifizierung und sichere Datenspeicherung." /></div>{isSupabaseConfigured ? <CheckCircle2 className="text-positive" size={20} /> : <CircleOff className="text-muted" size={20} />}</div>
-          <div className="rounded-xl bg-soft p-4"><p className="text-sm font-bold">{isSupabaseConfigured ? 'Verbunden' : 'Noch nicht verbunden'}</p><p className="mt-1 text-xs leading-5 text-muted">{isSupabaseConfigured ? 'Die Umgebungsvariablen sind gesetzt.' : 'VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY fehlen noch.'}</p></div>
+          <div className="rounded-xl bg-soft p-4"><p className="text-sm font-bold">{isSupabaseConfigured ? 'Verbunden' : 'Noch nicht verbunden'}</p><p className="mt-1 text-xs leading-5 text-muted">{isSupabaseConfigured ? 'Die Umgebungsvariablen sind gesetzt.' : 'VITE_SUPABASE_URL und VITE_SUPABASE_PUBLISHABLE_KEY fehlen noch.'}</p></div>
         </Panel>
         <Panel>
           <div className="flex gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-soft text-blue"><ShieldCheck size={19} /></span><SectionTitle title="Privatsphäre" description="Private Daten bleiben deinem Konto zugeordnet." /></div>

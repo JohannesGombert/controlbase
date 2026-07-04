@@ -139,7 +139,7 @@ Netlify:
 - Publish: `dist`
 - Env vars:
   - `VITE_SUPABASE_URL`
-  - `VITE_SUPABASE_ANON_KEY`
+  - `VITE_SUPABASE_PUBLISHABLE_KEY`
 
 ## Environment variables
 

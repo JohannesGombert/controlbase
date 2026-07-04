@@ -18,7 +18,7 @@ Acceptance criteria:
 
 - Create `src/lib/supabaseClient.js`
 - Read `VITE_SUPABASE_URL`
-- Read `VITE_SUPABASE_ANON_KEY`
+- Read `VITE_SUPABASE_PUBLISHABLE_KEY`
 - Export configured client
 
 Acceptance criteria:

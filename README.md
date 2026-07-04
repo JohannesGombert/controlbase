@@ -57,7 +57,7 @@ Environment variables:
 
 ```bash
 VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_PUBLISHABLE_KEY=
 ```
 
 ## Optional WHOOP preparation

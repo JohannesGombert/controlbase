@@ -47,7 +47,7 @@
     "publish_directory": "dist",
     "environment_variables": [
       "VITE_SUPABASE_URL",
-      "VITE_SUPABASE_ANON_KEY",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
       "VITE_ENABLE_WHOOP",
       "WHOOP_CLIENT_ID",
       "WHOOP_CLIENT_SECRET",
