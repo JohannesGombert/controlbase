@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { BankStatementImport } from '../components/BankStatementImport'
+import { FinanceStats } from '../components/FinanceStats'
 import { PageHeader } from '../components/PageHeader'
 import { Panel, SectionTitle } from '../components/Panel'
 import {
@@ -337,6 +338,7 @@ export function Finance() {
   const [budgetForm, setBudgetForm] = useState({ category: 'Lebensmittel', limitAmount: '' })
   const [saving, setSaving] = useState('')
   const [error, setError] = useState('')
+  const [statsRefreshKey, setStatsRefreshKey] = useState('initial')
 
   const selectedMonth = useMemo(() => new Date(`${monthValue}-01T12:00:00`), [monthValue])
 
@@ -348,6 +350,7 @@ export function Finance() {
       setAccounts(data.accounts)
       setTransactions(data.transactions)
       setBudgets(data.budgets)
+      setStatsRefreshKey(`${Date.now()}`)
     } catch {
       setError('Finanzdaten konnten nicht geladen werden. Bitte finance_schema.sql in Supabase ausfuehren.')
     }
@@ -494,6 +497,8 @@ export function Finance() {
       </div>
 
       {user && <BankStatementImport accounts={accounts} onImported={handleImported} userId={user.id} />}
+
+      {user && <FinanceStats refreshKey={statsRefreshKey} userId={user.id} />}
 
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <Panel>

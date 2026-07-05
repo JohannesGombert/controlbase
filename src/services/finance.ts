@@ -54,6 +54,19 @@ export async function loadFinance(userId: string, month: Date) {
   return { accounts: (accounts ?? []) as FinanceAccount[], transactions: (transactions ?? []) as FinanceTransaction[], budgets: (budgets ?? []) as FinanceBudget[] }
 }
 
+export async function loadFinanceTransactionsRange(userId: string, start: string, end: string) {
+  const { data, error } = await client()
+    .from('finance_transactions')
+    .select('*')
+    .eq('user_id', userId)
+    .gte('transaction_date', start)
+    .lte('transaction_date', end)
+    .order('transaction_date', { ascending: true })
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as FinanceTransaction[]
+}
+
 export async function createAccount(userId: string, input: { name: string; accountType: string; balance: number }) {
   const { error } = await client().from('finance_accounts').insert({ user_id: userId, name: input.name, account_type: input.accountType, balance: input.balance, currency: 'CHF' })
   if (error) throw error
