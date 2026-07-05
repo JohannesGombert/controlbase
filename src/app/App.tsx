@@ -5,6 +5,7 @@ import { AppLayout } from '../components/AppLayout'
 import { Dashboard } from '../pages/Dashboard'
 import { Finance } from '../pages/Finance'
 import { Health } from '../pages/Health'
+import { Nutrition } from '../pages/Nutrition'
 import { Ideas } from '../pages/Ideas'
 import { Login } from '../pages/Login'
 import { Purchases } from '../pages/Purchases'
@@ -22,6 +23,7 @@ export default function App() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="heute" element={<Today />} />
         <Route path="gesundheit" element={<Health />} />
+        <Route path="ernaehrung" element={<Nutrition />} />
         <Route path="finanzen" element={<Finance />} />
         <Route path="kaeufe" element={<Purchases />} />
         <Route path="ideen" element={<Ideas />} />

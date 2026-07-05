@@ -1,5 +1,6 @@
 import { Activity, Apple, Plus, Save, Scale, Target } from 'lucide-react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
@@ -35,7 +36,7 @@ export function Health() {
   const submit = async (event: FormEvent) => { event.preventDefault(); if (!user) return; setSaving(true); setError(''); setMessage(''); try { await saveHealthProfile(user.id, form); setMessage('Abnehmprofil wurde gespeichert.') } catch { setError('Profil konnte nicht gespeichert werden.') } finally { setSaving(false) } }
   const addWeight = async () => { if (!user || !newWeight) return; setError(''); try { await saveWeightEntry(user.id, new Date().toISOString().slice(0, 10), Number(newWeight)); const updated = await loadWeightEntries(user.id); setEntries(updated); const next = { ...form, currentWeight: newWeight }; setForm(next); await saveHealthProfile(user.id, next); setNewWeight(''); setMessage('Heutiges Gewicht wurde gespeichert.') } catch { setError('Gewicht konnte nicht gespeichert werden.') } }
 
-  return <><PageHeader eyebrow="Gesundheit & Ernährung" title="Dein Abnehmprofil" description="Die Grundlage für Gewichtstrend, Ernährungsplan und spätere WHOOP-Anpassungen." />
+  return <><PageHeader eyebrow="Gesundheit & Ernährung" title="Dein Abnehmprofil" description="Die Grundlage für Gewichtstrend, Ernährungsplan und spätere WHOOP-Anpassungen." action={<Link className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white" to="/ernaehrung">Zum Wochenplan</Link>} />
     {loading ? <Panel><p className="text-sm text-muted">Profil wird geladen …</p></Panel> : <form className="space-y-5" onSubmit={submit}>
       <div className="grid gap-4 sm:grid-cols-3">
         <Panel className="p-4 sm:p-5"><Scale className="text-accent" size={19} /><p className="mt-4 text-xs font-semibold text-muted">Aktuelles Gewicht</p><p className="mt-1 font-display text-3xl font-semibold">{form.currentWeight || '–'} <span className="text-base">kg</span></p></Panel>
