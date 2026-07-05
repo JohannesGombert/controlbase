@@ -1,0 +1,9 @@
+import { supabase } from '../lib/supabaseClient'
+import type { Meal } from './nutrition'
+
+export type ShoppingItem={id:string;ingredient:string;quantity:number|null;unit:string|null;category:string;checked:boolean}
+function client(){if(!supabase)throw new Error('Supabase fehlt');return supabase}
+const categoryFor=(name:string)=>{const value=name.toLowerCase();if(/poulet|lachs|rind|ei|tofu|skyr|protein/.test(value))return'Protein & Kühlung';if(/gemüse|brokkoli|tomat|paprika|salat|beeren|banane/.test(value))return'Obst & Gemüse';if(/reis|kartoffel|hafer|brot|couscous|pasta|linse|kichererbse/.test(value))return'Vorrat & Beilagen';return'Sonstiges'}
+export async function loadShoppingList(planId:string):Promise<ShoppingItem[]>{const{data,error}=await client().from('nutrition_shopping_items').select('*').eq('plan_id',planId).order('category').order('ingredient');if(error)throw error;return data??[]}
+export async function generateShoppingList(userId:string,planId:string,meals:Meal[]){const map=new Map<string,{ingredient:string;quantity:number|null;unit:string|null;category:string}>();for(const meal of meals)for(const raw of meal.ingredients){const match=raw.match(/^([\d.]+)\s*(g|kg|ml|l|Stück|Scheiben)?\s+(.+)$/i);const quantity=match?Number(match[1]):null,unit=match?.[2]??null,ingredient=(match?.[3]??raw).trim();const key=`${ingredient.toLowerCase()}|${unit??''}`;const current=map.get(key);map.set(key,{ingredient,unit,quantity:quantity===null?null:(current?.quantity??0)+quantity,category:categoryFor(ingredient)})}await client().from('nutrition_shopping_items').delete().eq('plan_id',planId);const rows=[...map.values()].map(item=>({user_id:userId,plan_id:planId,...item}));const{error}=await client().from('nutrition_shopping_items').insert(rows);if(error)throw error}
+export async function toggleShoppingItem(id:string,checked:boolean){const{error}=await client().from('nutrition_shopping_items').update({checked}).eq('id',id);if(error)throw error}
