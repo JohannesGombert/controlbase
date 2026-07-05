@@ -31,18 +31,27 @@ function typeLabel(type: ParsedBankTransaction['transactionType']) {
   return 'Ausgabe'
 }
 
+function monthKey(date: string) {
+  return date.slice(0, 7)
+}
+
+function monthLabel(key: string) {
+  return new Date(`${key}-01T12:00:00`).toLocaleDateString('de-CH', { month: 'long', year: 'numeric' })
+}
+
 export function BankStatementImport({
   accounts,
   onImported,
   userId,
 }: {
   accounts: FinanceAccount[]
-  onImported: () => Promise<void>
+  onImported: (month?: string) => Promise<void>
   userId: string
 }) {
   const [accountId, setAccountId] = useState('')
   const [rows, setRows] = useState<ParsedBankTransaction[]>([])
   const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const [activeMonth, setActiveMonth] = useState('all')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -62,6 +71,29 @@ export function BankStatementImport({
       ),
     [selectedRows],
   )
+  const monthSummaries = useMemo(() => {
+    const summaries = rows.reduce<Record<string, { count: number; selected: number; income: number; expenses: number; transfers: number }>>(
+      (result, row) => {
+        const key = monthKey(row.bookingDate)
+        const current = result[key] ?? { count: 0, selected: 0, income: 0, expenses: 0, transfers: 0 }
+        current.count += 1
+        if (selected[row.id]) {
+          current.selected += 1
+          if (row.transactionType === 'income') current.income += row.amount
+          if (row.transactionType === 'expense') current.expenses += row.amount
+          if (row.transactionType === 'transfer') current.transfers += row.amount
+        }
+        result[key] = current
+        return result
+      },
+      {},
+    )
+    return Object.entries(summaries).sort(([left], [right]) => right.localeCompare(left))
+  }, [rows, selected])
+  const visibleRows = useMemo(
+    () => (activeMonth === 'all' ? rows : rows.filter((row) => monthKey(row.bookingDate) === activeMonth)),
+    [activeMonth, rows],
+  )
 
   async function handleFile(file: File | null) {
     if (!file) return
@@ -71,10 +103,16 @@ export function BankStatementImport({
       const parsed = await parseBankStatement(file)
       setRows(parsed)
       setSelected(Object.fromEntries(parsed.map((row) => [row.id, true])))
-      setMessage(`${parsed.length} Buchungen erkannt. Bitte kurz pruefen und dann importieren.`)
+      const newestMonth = parsed.map((row) => monthKey(row.bookingDate)).sort().at(-1) ?? 'all'
+      setActiveMonth(newestMonth)
+      const monthCount = new Set(parsed.map((row) => monthKey(row.bookingDate))).size
+      setMessage(
+        `${parsed.length} Buchungen in ${monthCount} Monat${monthCount === 1 ? '' : 'en'} erkannt. Jede Buchung wird anhand des Buchungsdatums dem richtigen Monat zugeordnet.`,
+      )
     } catch (error) {
       setRows([])
       setSelected({})
+      setActiveMonth('all')
       setMessage(error instanceof Error ? error.message : 'PDF konnte nicht gelesen werden.')
     } finally {
       setLoading(false)
@@ -100,10 +138,12 @@ export function BankStatementImport({
           type: row.transactionType,
         })),
       )
+      const newestImportedMonth = selectedRows.map((row) => monthKey(row.bookingDate)).sort().at(-1)
       setRows([])
       setSelected({})
-      setMessage('Import abgeschlossen. Bereits importierte Bewegungen werden durch den Import-Schluessel uebersprungen.')
-      await onImported()
+      setActiveMonth('all')
+      setMessage('Import abgeschlossen. Die Bewegungen wurden anhand ihres Buchungsdatums in die jeweiligen Monate einsortiert.')
+      await onImported(newestImportedMonth)
     } catch {
       setMessage('Import fehlgeschlagen. Bitte finance_import_schema.sql in Supabase ausfuehren und erneut versuchen.')
     } finally {
@@ -185,8 +225,36 @@ export function BankStatementImport({
             </div>
           </div>
 
+          <div className="mt-5 rounded-xl border border-line bg-soft p-3">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${activeMonth === 'all' ? 'bg-ink text-white' : 'bg-white text-muted'}`}
+                onClick={() => setActiveMonth('all')}
+                type="button"
+              >
+                Alle Monate · {rows.length}
+              </button>
+              {monthSummaries.map(([key, month]) => (
+                <button
+                  className={`rounded-full px-3 py-1.5 text-xs font-bold ${
+                    activeMonth === key ? 'bg-ink text-white' : 'bg-white text-muted'
+                  }`}
+                  key={key}
+                  onClick={() => setActiveMonth(key)}
+                  type="button"
+                >
+                  {monthLabel(key)} · {month.selected}/{month.count}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs leading-5 text-muted">
+              Der Monatsfilter dient nur der Kontrolle. Beim Import wird jede ausgewaehlte Buchung mit ihrem echten Datum gespeichert
+              und erscheint danach automatisch im passenden Monatsfilter oben rechts.
+            </p>
+          </div>
+
           <div className="mt-5 max-h-[520px] overflow-auto rounded-xl border border-line">
-            {rows.map((row) => (
+            {visibleRows.map((row) => (
               <div className="grid gap-3 border-b border-line p-3 last:border-b-0 lg:grid-cols-[auto_0.7fr_1.8fr_0.8fr_0.8fr_0.7fr]" key={row.id}>
                 <input
                   aria-label={`${row.description} auswaehlen`}

@@ -157,6 +157,17 @@ export function Finance() {
     }
   }, [selectedMonth, user])
 
+  const handleImported = useCallback(
+    async (month?: string) => {
+      if (month && month !== monthValue) {
+        setMonthValue(month)
+        return
+      }
+      await refresh()
+    },
+    [monthValue, refresh],
+  )
+
   useEffect(() => {
     void refresh()
   }, [refresh])
@@ -286,7 +297,7 @@ export function Finance() {
         ))}
       </div>
 
-      {user && <BankStatementImport accounts={accounts} onImported={refresh} userId={user.id} />}
+      {user && <BankStatementImport accounts={accounts} onImported={handleImported} userId={user.id} />}
 
       <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <Panel>
