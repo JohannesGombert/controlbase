@@ -6,7 +6,7 @@ import { Panel, SectionTitle } from './Panel'
 
 const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white'
 const label = 'text-xs font-bold uppercase tracking-wider text-muted'
-const categories = [
+const defaultCategories = [
   'Lebensmittel',
   'Lohn',
   'Transfer',
@@ -41,10 +41,12 @@ function monthLabel(key: string) {
 
 export function BankStatementImport({
   accounts,
+  categories = [],
   onImported,
   userId,
 }: {
   accounts: FinanceAccount[]
+  categories?: string[]
   onImported: (month?: string) => Promise<void>
   userId: string
 }) {
@@ -94,6 +96,7 @@ export function BankStatementImport({
     () => (activeMonth === 'all' ? rows : rows.filter((row) => monthKey(row.bookingDate) === activeMonth)),
     [activeMonth, rows],
   )
+  const categoryOptions = useMemo(() => Array.from(new Set([...defaultCategories, ...categories])).sort(), [categories])
 
   async function handleFile(file: File | null) {
     if (!file) return
@@ -297,7 +300,7 @@ export function BankStatementImport({
                     onChange={(event) => updateRow(row.id, { category: event.target.value })}
                     value={row.category}
                   >
-                    {categories.map((category) => (
+                    {categoryOptions.map((category) => (
                       <option key={category}>{category}</option>
                     ))}
                   </select>

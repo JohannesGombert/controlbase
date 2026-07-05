@@ -31,6 +31,12 @@ export type FinanceBudget = {
   limit_amount: number
 }
 
+export type FinanceCategory = {
+  id: string
+  name: string
+  category_type: 'expense' | 'income' | 'transfer'
+}
+
 function client() {
   if (!supabase) throw new Error('Supabase ist nicht konfiguriert.')
   return supabase
@@ -43,15 +49,27 @@ export function monthKey(date = new Date()) {
 export async function loadFinance(userId: string, month: Date) {
   const start = format(startOfMonth(month), 'yyyy-MM-dd')
   const end = format(endOfMonth(month), 'yyyy-MM-dd')
-  const [{ data: accounts, error: accountError }, { data: transactions, error: transactionError }, { data: budgets, error: budgetError }] = await Promise.all([
+  const [
+    { data: accounts, error: accountError },
+    { data: transactions, error: transactionError },
+    { data: budgets, error: budgetError },
+    { data: categories, error: categoryError },
+  ] = await Promise.all([
     client().from('finance_accounts').select('*').eq('user_id', userId).order('created_at'),
     client().from('finance_transactions').select('*').eq('user_id', userId).gte('transaction_date', start).lte('transaction_date', end).order('transaction_date', { ascending: false }).order('created_at', { ascending: false }),
     client().from('finance_budgets').select('*').eq('user_id', userId).eq('month', monthKey(month)).order('category'),
+    client().from('finance_categories').select('*').eq('user_id', userId).order('category_type').order('name'),
   ])
   if (accountError) throw accountError
   if (transactionError) throw transactionError
   if (budgetError) throw budgetError
-  return { accounts: (accounts ?? []) as FinanceAccount[], transactions: (transactions ?? []) as FinanceTransaction[], budgets: (budgets ?? []) as FinanceBudget[] }
+  if (categoryError && categoryError.code !== '42P01') throw categoryError
+  return {
+    accounts: (accounts ?? []) as FinanceAccount[],
+    budgets: (budgets ?? []) as FinanceBudget[],
+    categories: categoryError ? [] : ((categories ?? []) as FinanceCategory[]),
+    transactions: (transactions ?? []) as FinanceTransaction[],
+  }
 }
 
 export async function loadFinanceTransactionsRange(userId: string, start: string, end: string) {
@@ -69,6 +87,18 @@ export async function loadFinanceTransactionsRange(userId: string, start: string
 
 export async function createAccount(userId: string, input: { name: string; accountType: string; balance: number }) {
   const { error } = await client().from('finance_accounts').insert({ user_id: userId, name: input.name, account_type: input.accountType, balance: input.balance, currency: 'CHF' })
+  if (error) throw error
+}
+
+export async function createCategory(userId: string, input: { name: string; type: 'expense' | 'income' | 'transfer' }) {
+  const { error } = await client()
+    .from('finance_categories')
+    .upsert({ user_id: userId, name: input.name.trim(), category_type: input.type }, { onConflict: 'user_id,name' })
+  if (error) throw error
+}
+
+export async function deleteCategory(id: string) {
+  const { error } = await client().from('finance_categories').delete().eq('id', id)
   if (error) throw error
 }
 

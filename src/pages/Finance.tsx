@@ -22,7 +22,9 @@ import { PageHeader } from '../components/PageHeader'
 import { Panel, SectionTitle } from '../components/Panel'
 import {
   createAccount,
+  createCategory,
   createTransaction,
+  deleteCategory,
   deleteTransaction,
   loadFinance,
   saveBudget,
@@ -30,6 +32,7 @@ import {
   updateTransaction,
   type FinanceAccount,
   type FinanceBudget,
+  type FinanceCategory,
   type FinanceTransaction,
 } from '../services/finance'
 
@@ -131,11 +134,13 @@ function TransactionIcon({ item }: { item: FinanceTransaction }) {
 
 function TransactionRow({
   accounts,
+  categories,
   item,
   onDelete,
   onSave,
 }: {
   accounts: FinanceAccount[]
+  categories: string[]
   item: FinanceTransaction
   onDelete: () => Promise<void>
   onSave: (id: string, input: Parameters<typeof updateTransaction>[1]) => Promise<void>
@@ -240,7 +245,7 @@ function TransactionRow({
           <label>
             <span className={label}>Kategorie</span>
             <select className={field} onChange={(event) => setForm({ ...form, category: event.target.value })} value={form.category}>
-              {transactionCategories.map((category) => (
+              {categories.map((category) => (
                 <option key={category}>{category}</option>
               ))}
             </select>
@@ -319,12 +324,95 @@ function TransactionRow({
   )
 }
 
+function CategoryManager({
+  categories,
+  onCreate,
+  onDelete,
+}: {
+  categories: FinanceCategory[]
+  onCreate: (name: string, type: FinanceCategory['category_type']) => Promise<void>
+  onDelete: (id: string) => Promise<void>
+}) {
+  const [name, setName] = useState('')
+  const [type, setType] = useState<FinanceCategory['category_type']>('expense')
+  const [saving, setSaving] = useState(false)
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    if (!name.trim()) return
+    setSaving(true)
+    try {
+      await onCreate(name.trim(), type)
+      setName('')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Panel>
+      <SectionTitle
+        description="Eigene Kategorien fuer Buchungen, Import-Korrekturen, Budgets und Auswertungen anlegen."
+        title="Kategorien"
+      />
+      <form className="grid gap-3 border-b border-line pb-5 sm:grid-cols-[1fr_0.8fr_auto]" onSubmit={submit}>
+        <label>
+          <span className={label}>Name</span>
+          <input
+            className={field}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="z. B. Weiterbildung"
+            required
+            value={name}
+          />
+        </label>
+        <label>
+          <span className={label}>Art</span>
+          <select className={field} onChange={(event) => setType(event.target.value as FinanceCategory['category_type'])} value={type}>
+            <option value="expense">Ausgabe</option>
+            <option value="income">Einnahme</option>
+            <option value="transfer">Transfer</option>
+          </select>
+        </label>
+        <button
+          className="mt-auto inline-flex h-[46px] items-center justify-center rounded-xl bg-ink px-4 text-sm font-bold text-white disabled:opacity-60"
+          disabled={saving}
+          type="submit"
+        >
+          <Plus size={17} />
+        </button>
+      </form>
+      <div className="mt-4 flex flex-wrap gap-2">
+        {categories.length ? (
+          categories.map((category) => (
+            <span className="inline-flex items-center gap-2 rounded-full bg-soft px-3 py-2 text-xs font-bold text-muted" key={category.id}>
+              {category.name}
+              <span className="font-normal">· {category.category_type === 'expense' ? 'Ausgabe' : category.category_type === 'income' ? 'Einnahme' : 'Transfer'}</span>
+              <button
+                aria-label={`${category.name} loeschen`}
+                className="text-muted hover:text-red-700"
+                onClick={() => void onDelete(category.id)}
+                type="button"
+              >
+                <X size={13} />
+              </button>
+            </span>
+          ))
+        ) : (
+          <p className="py-4 text-sm text-muted">Noch keine eigenen Kategorien.</p>
+        )}
+      </div>
+    </Panel>
+  )
+}
+
 export function Finance() {
   const { user } = useAuth()
   const [monthValue, setMonthValue] = useState(format(new Date(), 'yyyy-MM'))
   const [accounts, setAccounts] = useState<FinanceAccount[]>([])
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([])
   const [budgets, setBudgets] = useState<FinanceBudget[]>([])
+  const [categories, setCategories] = useState<FinanceCategory[]>([])
   const [accountForm, setAccountForm] = useState({ name: '', accountType: 'bank', balance: '' })
   const [transactionForm, setTransactionForm] = useState({
     accountId: '',
@@ -350,6 +438,7 @@ export function Finance() {
       setAccounts(data.accounts)
       setTransactions(data.transactions)
       setBudgets(data.budgets)
+      setCategories(data.categories)
       setStatsRefreshKey(`${Date.now()}`)
     } catch {
       setError('Finanzdaten konnten nicht geladen werden. Bitte finance_schema.sql in Supabase ausfuehren.')
@@ -399,6 +488,24 @@ export function Finance() {
           {},
         ),
     [transactions],
+  )
+  const customExpenseCategories = useMemo(
+    () => categories.filter((category) => category.category_type === 'expense').map((category) => category.name),
+    [categories],
+  )
+  const customIncomeCategories = useMemo(
+    () => categories.filter((category) => category.category_type === 'income').map((category) => category.name),
+    [categories],
+  )
+  const customTransferCategories = useMemo(
+    () => categories.filter((category) => category.category_type === 'transfer').map((category) => category.name),
+    [categories],
+  )
+  const expenseCategoryOptions = useMemo(() => Array.from(new Set([...expenseCategories, ...customExpenseCategories])).sort(), [customExpenseCategories])
+  const incomeCategoryOptions = useMemo(() => Array.from(new Set([...incomeCategories, ...customIncomeCategories])).sort(), [customIncomeCategories])
+  const allCategoryOptions = useMemo(
+    () => Array.from(new Set([...transactionCategories, ...customExpenseCategories, ...customIncomeCategories, ...customTransferCategories])).sort(),
+    [customExpenseCategories, customIncomeCategories, customTransferCategories],
   )
 
   async function addAccount(event: FormEvent) {
@@ -453,6 +560,27 @@ export function Finance() {
     }
   }
 
+  async function addCategory(name: string, type: FinanceCategory['category_type']) {
+    if (!user) return
+    setError('')
+    try {
+      await createCategory(user.id, { name, type })
+      await refresh()
+    } catch {
+      setError('Kategorie konnte nicht gespeichert werden. Bitte finance_categories_schema.sql in Supabase ausfuehren.')
+    }
+  }
+
+  async function removeCategory(id: string) {
+    setError('')
+    try {
+      await deleteCategory(id)
+      await refresh()
+    } catch {
+      setError('Kategorie konnte nicht geloescht werden.')
+    }
+  }
+
   return (
     <>
       <PageHeader
@@ -496,7 +624,7 @@ export function Finance() {
         ))}
       </div>
 
-      {user && <BankStatementImport accounts={accounts} onImported={handleImported} userId={user.id} />}
+      {user && <BankStatementImport accounts={accounts} categories={allCategoryOptions} onImported={handleImported} userId={user.id} />}
 
       {user && <FinanceStats refreshKey={statsRefreshKey} userId={user.id} />}
 
@@ -566,6 +694,10 @@ export function Finance() {
           </div>
         </Panel>
 
+        {user && <CategoryManager categories={categories} onCreate={addCategory} onDelete={removeCategory} />}
+      </div>
+
+      <div className="mt-5 grid gap-5 xl:grid-cols-2">
         <Panel>
           <SectionTitle description="Einnahmen und Ausgaben fuer die Monatsuebersicht." title="Buchung erfassen" />
           <form className="space-y-4" onSubmit={addTransaction}>
@@ -631,7 +763,7 @@ export function Finance() {
                 onChange={(event) => setTransactionForm({ ...transactionForm, category: event.target.value })}
                 value={transactionForm.category}
               >
-                {(transactionForm.type === 'income' ? incomeCategories : expenseCategories).map((category) => (
+                {(transactionForm.type === 'income' ? incomeCategoryOptions : expenseCategoryOptions).map((category) => (
                   <option key={category}>{category}</option>
                 ))}
               </select>
@@ -679,6 +811,7 @@ export function Finance() {
               {transactions.map((item) => (
                 <TransactionRow
                   accounts={accounts}
+                  categories={allCategoryOptions}
                   item={item}
                   key={item.id}
                   onDelete={async () => {
@@ -741,7 +874,7 @@ export function Finance() {
               onChange={(event) => setBudgetForm({ ...budgetForm, category: event.target.value })}
               value={budgetForm.category}
             >
-              {expenseCategories.map((category) => (
+              {expenseCategoryOptions.map((category) => (
                 <option key={category}>{category}</option>
               ))}
             </select>
