@@ -4,6 +4,7 @@ import {
   ArrowDownLeft,
   ArrowLeftRight,
   ArrowUpRight,
+  Edit3,
   Landmark,
   PiggyBank,
   Plus,
@@ -11,6 +12,7 @@ import {
   Save,
   Trash2,
   WalletCards,
+  X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
@@ -24,6 +26,7 @@ import {
   loadFinance,
   saveBudget,
   updateAccountBalance,
+  updateTransaction,
   type FinanceAccount,
   type FinanceBudget,
   type FinanceTransaction,
@@ -44,6 +47,9 @@ const expenseCategories = [
   'Sonstiges',
 ]
 const incomeCategories = ['Lohn', 'Bonus', 'Dividenden', 'Verkauf', 'Rueckerstattung', 'Sonstiges']
+const transactionCategories = Array.from(
+  new Set([...expenseCategories, ...incomeCategories, 'Transfer', 'TWINT', 'Bargeld', 'Gebuehren']),
+)
 const accountTypes: Record<string, string> = {
   bank: 'Bankkonto',
   cash: 'Bargeld',
@@ -119,6 +125,196 @@ function TransactionIcon({ item }: { item: FinanceTransaction }) {
     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-red-50 text-red-700">
       <ArrowUpRight size={17} />
     </span>
+  )
+}
+
+function TransactionRow({
+  accounts,
+  item,
+  onDelete,
+  onSave,
+}: {
+  accounts: FinanceAccount[]
+  item: FinanceTransaction
+  onDelete: () => Promise<void>
+  onSave: (id: string, input: Parameters<typeof updateTransaction>[1]) => Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    accountId: item.account_id ?? '',
+    amount: String(item.amount),
+    category: item.category,
+    date: item.transaction_date,
+    description: item.description,
+    notes: item.notes ?? '',
+    type: item.transaction_type,
+  })
+
+  useEffect(() => {
+    if (!editing) {
+      setForm({
+        accountId: item.account_id ?? '',
+        amount: String(item.amount),
+        category: item.category,
+        date: item.transaction_date,
+        description: item.description,
+        notes: item.notes ?? '',
+        type: item.transaction_type,
+      })
+    }
+  }, [editing, item])
+
+  const isIncome = item.transaction_type === 'income'
+  const isTransfer = item.transaction_type === 'transfer'
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setSaving(true)
+    try {
+      await onSave(item.id, {
+        accountId: form.accountId,
+        amount: Number(form.amount),
+        category: form.category,
+        date: form.date,
+        description: form.description,
+        notes: form.notes,
+        type: form.type,
+      })
+      setEditing(false)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (editing) {
+    return (
+      <form className="space-y-3 py-4" onSubmit={submit}>
+        <div className="grid gap-3 lg:grid-cols-[1fr_1.4fr_0.8fr_0.9fr]">
+          <label>
+            <span className={label}>Datum</span>
+            <input
+              className={field}
+              onChange={(event) => setForm({ ...form, date: event.target.value })}
+              required
+              type="date"
+              value={form.date}
+            />
+          </label>
+          <label>
+            <span className={label}>Beschreibung</span>
+            <input
+              className={field}
+              onChange={(event) => setForm({ ...form, description: event.target.value })}
+              required
+              value={form.description}
+            />
+          </label>
+          <label>
+            <span className={label}>Art</span>
+            <select
+              className={field}
+              onChange={(event) => setForm({ ...form, type: event.target.value as FinanceTransaction['transaction_type'] })}
+              value={form.type}
+            >
+              <option value="expense">Ausgabe</option>
+              <option value="income">Einnahme</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </label>
+          <label>
+            <span className={label}>Betrag CHF</span>
+            <input
+              className={field}
+              min="0.01"
+              onChange={(event) => setForm({ ...form, amount: event.target.value })}
+              required
+              step="0.01"
+              type="number"
+              value={form.amount}
+            />
+          </label>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[1fr_1fr_1.4fr_auto]">
+          <label>
+            <span className={label}>Kategorie</span>
+            <select className={field} onChange={(event) => setForm({ ...form, category: event.target.value })} value={form.category}>
+              {transactionCategories.map((category) => (
+                <option key={category}>{category}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className={label}>Konto</span>
+            <select className={field} onChange={(event) => setForm({ ...form, accountId: event.target.value })} value={form.accountId}>
+              <option value="">Kein Konto</option>
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className={label}>Notiz</span>
+            <input className={field} onChange={(event) => setForm({ ...form, notes: event.target.value })} value={form.notes} />
+          </label>
+          <div className="flex items-end gap-2">
+            <button
+              className="inline-flex h-[46px] items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-bold text-white disabled:opacity-60"
+              disabled={saving}
+              type="submit"
+            >
+              <Save size={16} /> Speichern
+            </button>
+            <button
+              className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-line bg-white text-muted"
+              onClick={() => setEditing(false)}
+              title="Abbrechen"
+              type="button"
+            >
+              <X size={17} />
+            </button>
+          </div>
+        </div>
+        {item.original_description && item.original_description !== item.description && (
+          <p className="text-xs leading-5 text-muted">Original aus Import: {item.original_description}</p>
+        )}
+      </form>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-3 py-3">
+      <TransactionIcon item={item} />
+      <button className="min-w-0 flex-1 text-left" onClick={() => setEditing(true)} type="button">
+        <p className="truncate text-sm font-bold">{item.description}</p>
+        <p className="mt-0.5 text-xs text-muted">
+          {new Date(`${item.transaction_date}T12:00:00`).toLocaleDateString('de-CH')} · {item.category}
+          {item.source ? ` · ${item.source}` : ''}
+        </p>
+      </button>
+      <p className={`text-sm font-bold ${isIncome ? 'text-positive' : isTransfer ? 'text-accent' : 'text-red-700'}`}>
+        {isIncome ? '+' : isTransfer ? '↔ ' : '−'}
+        {money(Number(item.amount))}
+      </p>
+      <button
+        aria-label={`${item.description} bearbeiten`}
+        className="grid size-8 place-items-center text-muted hover:text-accent"
+        onClick={() => setEditing(true)}
+        type="button"
+      >
+        <Edit3 size={15} />
+      </button>
+      <button
+        aria-label={`${item.description} loeschen`}
+        className="grid size-8 place-items-center text-muted hover:text-red-700"
+        onClick={() => void onDelete()}
+        type="button"
+      >
+        <Trash2 size={15} />
+      </button>
+    </div>
   )
 }
 
@@ -475,7 +671,22 @@ export function Finance() {
           </div>
           {transactions.length ? (
             <div className="divide-y divide-line">
-              {transactions.map((item) => {
+              {transactions.map((item) => (
+                <TransactionRow
+                  accounts={accounts}
+                  item={item}
+                  key={item.id}
+                  onDelete={async () => {
+                    await deleteTransaction(item.id)
+                    await refresh()
+                  }}
+                  onSave={async (id, input) => {
+                    await updateTransaction(id, input)
+                    await refresh()
+                  }}
+                />
+              ))}
+              {transactions.filter(() => false).map((item) => {
                 const isIncome = item.transaction_type === 'income'
                 const isTransfer = item.transaction_type === 'transfer'
                 return (

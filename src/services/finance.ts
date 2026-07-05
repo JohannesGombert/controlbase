@@ -108,6 +108,33 @@ export async function deleteTransaction(id: string) {
   if (error) throw error
 }
 
+export async function updateTransaction(
+  id: string,
+  input: {
+    accountId: string
+    amount: number
+    category: string
+    date: string
+    description: string
+    notes: string
+    type: 'income' | 'expense' | 'transfer'
+  },
+) {
+  const { error } = await client()
+    .from('finance_transactions')
+    .update({
+      account_id: input.accountId || null,
+      amount: input.amount,
+      category: input.category,
+      description: input.description,
+      notes: input.notes || null,
+      transaction_date: input.date,
+      transaction_type: input.type,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
 export async function saveBudget(userId: string, month: Date, category: string, limitAmount: number) {
   const { error } = await client().from('finance_budgets').upsert({ user_id: userId, month: monthKey(month), category, limit_amount: limitAmount }, { onConflict: 'user_id,month,category' })
   if (error) throw error
