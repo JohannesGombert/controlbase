@@ -14,6 +14,7 @@ export type Meal = {
   eaten_at: string | null
   photo_data_url: string | null
   photo_calorie_estimate: number | null
+  photo_protein_estimate: number | null
   photo_analysis_note: string | null
 }
 export type WeekPlan = { id: string; week_start: string; calorie_target: number; protein_target: number; meals: Meal[] }
@@ -146,6 +147,12 @@ const meals: Record<DietStyle, MealPool> = {
 }
 
 function client() { if (!supabase) throw new Error('Supabase fehlt'); return supabase }
+async function authHeaders() {
+  const { data } = await client().auth.getSession()
+  const token = data.session?.access_token
+  if (!token) throw new Error('Nicht angemeldet.')
+  return { authorization: `Bearer ${token}` }
+}
 export function weekStart(date = new Date()) { return startOfWeek(date, { weekStartsOn: 1 }) }
 export function calculateTargets(profile: HealthProfile) {
   const weight = Number(profile.currentWeight), target = Number(profile.targetWeight), height = Number(profile.heightCm)
@@ -232,14 +239,11 @@ export async function setMealEaten(meal: Meal, eaten: boolean) {
 }
 
 export async function saveMealPhotoEstimate(meal: Meal, photoDataUrl: string) {
-  const { error } = await client()
-    .from('nutrition_meals')
-    .update({
-      eaten_at: meal.eaten_at ?? new Date().toISOString(),
-      photo_data_url: photoDataUrl,
-      photo_calorie_estimate: meal.calories ?? null,
-      photo_analysis_note: 'Foto gespeichert. Kalorien automatisch aus der geplanten Portion uebernommen; echte Bildanalyse kann als naechster Schritt angebunden werden.',
-    })
-    .eq('id', meal.id)
-  if (error) throw error
+  const response = await fetch('/.netlify/functions/meal-photo-analyze', {
+    body: JSON.stringify({ mealId: meal.id, photoDataUrl }),
+    headers: { ...(await authHeaders()), 'content-type': 'application/json' },
+    method: 'POST',
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok) throw new Error(data.error ?? 'Fotoanalyse fehlgeschlagen.')
 }

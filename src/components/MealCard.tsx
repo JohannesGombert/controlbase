@@ -98,6 +98,7 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
   const steps = useMemo(() => specificSteps[meal.title] ?? genericSteps(meal), [meal])
   const eaten = Boolean(meal.eaten_at)
   const calories = meal.photo_calorie_estimate ?? meal.calories
+  const protein = meal.photo_protein_estimate ?? meal.protein
 
   const toggleEaten = async () => {
     setSaving(true)
@@ -138,7 +139,7 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
         <div className="flex justify-between gap-2">
           <p className="text-xs font-bold text-muted">{mealTypeLabels[meal.meal_type] ?? meal.meal_type}</p>
           <p className="text-xs text-muted">
-            {calories} kcal - {meal.protein} g
+            {calories} kcal - {protein} g
           </p>
         </div>
         <h3 className="mt-1 font-semibold">{meal.title}</h3>
@@ -201,7 +202,7 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-accent">
-                  Rezept - {calories} kcal - {meal.protein} g Protein
+                  Rezept - {calories} kcal - {protein} g Protein
                 </p>
                 <h2 className="mt-2 font-display text-3xl font-semibold">{meal.title}</h2>
               </div>

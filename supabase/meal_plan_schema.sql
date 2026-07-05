@@ -12,12 +12,14 @@ create table if not exists public.nutrition_meals (
   eaten_at timestamptz,
   photo_data_url text,
   photo_calorie_estimate integer,
+  photo_protein_estimate integer,
   photo_analysis_note text,
   created_at timestamptz not null default now(), updated_at timestamptz not null default now(), unique(plan_id, meal_date, meal_type)
 );
 alter table public.nutrition_meals add column if not exists eaten_at timestamptz;
 alter table public.nutrition_meals add column if not exists photo_data_url text;
 alter table public.nutrition_meals add column if not exists photo_calorie_estimate integer;
+alter table public.nutrition_meals add column if not exists photo_protein_estimate integer;
 alter table public.nutrition_meals add column if not exists photo_analysis_note text;
 drop trigger if exists set_nutrition_week_plans_updated_at on public.nutrition_week_plans;
 create trigger set_nutrition_week_plans_updated_at before update on public.nutrition_week_plans for each row execute function public.set_updated_at();
