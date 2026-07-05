@@ -10,6 +10,7 @@ import { Shopping } from '../pages/Shopping'
 import { Ideas } from '../pages/Ideas'
 import { Login } from '../pages/Login'
 import { Purchases } from '../pages/Purchases'
+import { Privacy } from '../pages/Privacy'
 import { Settings } from '../pages/Settings'
 import { Today } from '../pages/Today'
 import { WeeklyReview } from '../pages/WeeklyReview'
@@ -19,6 +20,7 @@ export default function App() {
     <AuthProvider>
       <Routes>
       <Route path="login" element={<Login />} />
+      <Route path="privacy" element={<Privacy />} />
       <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<Navigate replace to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />

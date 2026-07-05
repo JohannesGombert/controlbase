@@ -22,8 +22,7 @@ export async function handler(event) {
     const start = new Date(end.getTime() - 14 * 24 * 60 * 60 * 1000)
     const params = { end: end.toISOString(), start: start.toISOString() }
 
-    const [profile, cycles, recoveries, sleeps, workouts] = await Promise.all([
-      whoopFetch('/developer/v2/user/profile/basic', connection.access_token),
+    const [cycles, recoveries, sleeps, workouts] = await Promise.all([
       pagedWhoopFetch('/developer/v2/cycle', connection.access_token, params),
       pagedWhoopFetch('/developer/v2/recovery', connection.access_token, params),
       pagedWhoopFetch('/developer/v2/activity/sleep', connection.access_token, params),
@@ -106,7 +105,7 @@ export async function handler(event) {
     const records = dailyRows.length + workoutRows.length
     await supabase
       .from('whoop_connections')
-      .update({ last_sync_at: new Date().toISOString(), status: 'connected', whoop_user_id: profile?.user_id ?? connection.whoop_user_id })
+      .update({ last_sync_at: new Date().toISOString(), status: 'connected' })
       .eq('user_id', user.id)
     if (logId) {
       await supabase.from('whoop_sync_log').update({ finished_at: new Date().toISOString(), records_upserted: records, status: 'success' }).eq('id', logId)

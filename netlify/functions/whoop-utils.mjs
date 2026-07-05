@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import crypto from 'node:crypto'
 
 export const WHOOP_API = 'https://api.prod.whoop.com'
-export const WHOOP_SCOPES = 'read:profile read:cycles read:recovery read:sleep read:workout'
+export const WHOOP_SCOPES = 'read:cycles read:recovery read:sleep read:workout'
 
 export function json(statusCode, body) {
   return {

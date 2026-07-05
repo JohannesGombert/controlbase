@@ -1,4 +1,4 @@
-import { adminClient, redirectUri, siteUrl, verifyState, whoopFetch, whoopTokenRequest } from './whoop-utils.mjs'
+import { adminClient, redirectUri, siteUrl, verifyState, whoopTokenRequest } from './whoop-utils.mjs'
 
 export async function handler(event) {
   const appUrl = siteUrl(event)
@@ -12,7 +12,6 @@ export async function handler(event) {
       grant_type: 'authorization_code',
       redirect_uri: redirectUri(event),
     })
-    const profile = await whoopFetch('/developer/v2/user/profile/basic', token.access_token)
     const supabase = adminClient()
     const { error } = await supabase.from('whoop_connections').upsert(
       {
@@ -24,7 +23,7 @@ export async function handler(event) {
         status: 'connected',
         token_type: token.token_type,
         user_id: state.userId,
-        whoop_user_id: profile?.user_id ?? null,
+        whoop_user_id: null,
       },
       { onConflict: 'user_id' },
     )
