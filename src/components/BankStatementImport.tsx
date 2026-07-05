@@ -144,8 +144,9 @@ export function BankStatementImport({
       setActiveMonth('all')
       setMessage('Import abgeschlossen. Die Bewegungen wurden anhand ihres Buchungsdatums in die jeweiligen Monate einsortiert.')
       await onImported(newestImportedMonth)
-    } catch {
-      setMessage('Import fehlgeschlagen. Bitte finance_import_schema.sql in Supabase ausfuehren und erneut versuchen.')
+    } catch (error) {
+      const detail = error instanceof Error ? ` Detail: ${error.message}` : ''
+      setMessage(`Import fehlgeschlagen. Bitte finance_import_schema.sql in Supabase ausfuehren und erneut versuchen.${detail}`)
     } finally {
       setSaving(false)
     }
