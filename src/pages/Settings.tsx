@@ -1,9 +1,11 @@
-import { CheckCircle2, CircleOff, Database, ExternalLink, RefreshCw, ShieldCheck, Watch } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, CircleOff, Database, ExternalLink, RefreshCw, ShieldCheck, Trash2, Watch } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
 import { Panel, SectionTitle } from '../components/Panel'
+import { DangerButton, FormInput, labelClass } from '../components/ui'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
+import { resetAllUserData } from '../services/reset'
 import { loadWhoopStatus, startWhoopConnection, syncWhoop, type WhoopConnectionStatus } from '../services/whoop'
 
 function dateTime(value?: string | null) {
@@ -16,6 +18,10 @@ export function Settings() {
   const [loadingWhoop, setLoadingWhoop] = useState(false)
   const [whoopMessage, setWhoopMessage] = useState('')
   const [whoopError, setWhoopError] = useState('')
+  const [resetConfirm, setResetConfirm] = useState('')
+  const [resetting, setResetting] = useState(false)
+  const [resetMessage, setResetMessage] = useState('')
+  const [resetError, setResetError] = useState('')
 
   const refreshWhoop = useCallback(async () => {
     if (!user) return
@@ -58,6 +64,23 @@ export function Settings() {
       setWhoopError(error instanceof Error ? error.message : 'WHOOP Sync fehlgeschlagen.')
     } finally {
       setLoadingWhoop(false)
+    }
+  }
+
+  async function resetData() {
+    if (resetConfirm !== 'RESET') return
+    setResetting(true)
+    setResetMessage('')
+    setResetError('')
+    try {
+      const result = await resetAllUserData()
+      setResetConfirm('')
+      setResetMessage(`Reset abgeschlossen. ${result.deletedTables.length} Datenbereiche wurden geleert.`)
+      await refreshWhoop()
+    } catch (error) {
+      setResetError(error instanceof Error ? error.message : 'Reset fehlgeschlagen.')
+    } finally {
+      setResetting(false)
     }
   }
 
@@ -136,6 +159,43 @@ export function Settings() {
           <p className="mt-4 text-xs leading-5 text-muted">
             Wichtig: WHOOP Client Secret und Supabase Service Role Key werden nur in Netlify Functions genutzt, nicht im Browser.
           </p>
+        </Panel>
+        <Panel className="border-status-danger/35 lg:col-span-2">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-status-danger/10 text-status-danger">
+                <AlertTriangle size={19} />
+              </span>
+              <div>
+                <SectionTitle title="Reset" description="Alle persönlichen ControlBase-Daten dieses Kontos löschen." />
+                <div className="rounded-xl border border-status-danger/25 bg-status-danger/10 p-4 text-sm leading-6 text-muted">
+                  <p className="font-semibold text-ink">Diese Aktion löscht Check-ins, Gesundheit, Ernährung, Finanzen, Käufe, Ideen, Reviews und WHOOP-Sync-Daten.</p>
+                  <p className="mt-1">Dein Login-Konto bleibt bestehen. Die Aktion kann nicht rückgängig gemacht werden.</p>
+                </div>
+              </div>
+            </div>
+            <div className="w-full shrink-0 lg:w-80">
+              <label className="block">
+                <span className={labelClass}>Zur Bestätigung RESET eingeben</span>
+                <FormInput
+                  autoComplete="off"
+                  onChange={(event) => setResetConfirm(event.target.value)}
+                  placeholder="RESET"
+                  value={resetConfirm}
+                />
+              </label>
+              <DangerButton
+                className="mt-3 w-full"
+                disabled={resetting || resetConfirm !== 'RESET'}
+                onClick={() => void resetData()}
+                type="button"
+              >
+                <Trash2 size={16} /> {resetting ? 'Löscht …' : 'Alle Daten löschen'}
+              </DangerButton>
+            </div>
+          </div>
+          {resetMessage && <p className="mt-4 rounded-xl bg-status-success/10 px-4 py-3 text-sm font-semibold text-status-success">{resetMessage}</p>}
+          {resetError && <p className="mt-4 rounded-xl bg-status-danger/10 px-4 py-3 text-sm font-semibold text-status-danger">{resetError}</p>}
         </Panel>
       </div>
     </>
