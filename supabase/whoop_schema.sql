@@ -96,6 +96,14 @@ alter table whoop_daily_metrics enable row level security;
 alter table whoop_workouts enable row level security;
 alter table whoop_sync_log enable row level security;
 
+revoke all on table whoop_connections from anon, authenticated;
+revoke all on table whoop_daily_metrics from anon;
+revoke all on table whoop_workouts from anon;
+revoke all on table whoop_sync_log from anon;
+grant select on table whoop_daily_metrics to authenticated;
+grant select on table whoop_workouts to authenticated;
+grant select on table whoop_sync_log to authenticated;
+
 -- Client may only see non-token connection status through a view.
 -- Do not grant browser-level SELECT on whoop_connections directly.
 
@@ -111,14 +119,17 @@ select
 from whoop_connections;
 
 -- Metrics are readable by the owning authenticated user.
+drop policy if exists "Users can read own whoop daily metrics" on whoop_daily_metrics;
 create policy "Users can read own whoop daily metrics"
   on whoop_daily_metrics for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can read own whoop workouts" on whoop_workouts;
 create policy "Users can read own whoop workouts"
   on whoop_workouts for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can read own whoop sync log" on whoop_sync_log;
 create policy "Users can read own whoop sync log"
   on whoop_sync_log for select
   using (auth.uid() = user_id);
