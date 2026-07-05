@@ -114,7 +114,7 @@ export function Settings() {
             </div>
             <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-control-deep px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
                 disabled={!user || loadingWhoop}
                 onClick={() => void connect()}
                 type="button"
@@ -122,7 +122,7 @@ export function Settings() {
                 <ExternalLink size={16} /> {whoop?.connected ? 'Neu verbinden' : 'WHOOP verbinden'}
               </button>
               <button
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 py-3 text-sm font-bold disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-control-surface px-5 py-3 text-sm font-bold disabled:opacity-60"
                 disabled={!whoop?.connected || loadingWhoop}
                 onClick={() => void sync()}
                 type="button"
@@ -132,7 +132,7 @@ export function Settings() {
             </div>
           </div>
           {whoopMessage && <p className="mt-4 rounded-xl bg-[#e7f4ee] px-4 py-3 text-sm font-semibold text-positive">{whoopMessage}</p>}
-          {whoopError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{whoopError}</p>}
+          {whoopError && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-status-danger">{whoopError}</p>}
           <p className="mt-4 text-xs leading-5 text-muted">
             Wichtig: WHOOP Client Secret und Supabase Service Role Key werden nur in Netlify Functions genutzt, nicht im Browser.
           </p>

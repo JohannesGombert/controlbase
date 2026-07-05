@@ -16,7 +16,7 @@ import {
 } from '../services/health'
 import { loadWhoopHealthData, type WhoopDailyMetric, type WhoopWorkout } from '../services/whoop'
 
-const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white'
+const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-control-hover'
 const label = 'text-xs font-bold uppercase tracking-wider text-muted'
 
 function metric(value: number | null | undefined, suffix = '') {
@@ -77,7 +77,7 @@ function WhoopPanel({ daily, workouts }: { daily: WhoopDailyMetric[]; workouts: 
           </div>
 
           <div className="mt-5 grid gap-5 xl:grid-cols-[1.35fr_0.8fr]">
-            <div className="h-64 rounded-xl border border-line bg-white p-3">
+            <div className="h-64 rounded-xl border border-line bg-control-surface p-3">
               <ResponsiveContainer height="100%" width="100%">
                 <LineChart data={chartData}>
                   <XAxis dataKey="date" fontSize={11} tickFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })} />
@@ -89,7 +89,7 @@ function WhoopPanel({ daily, workouts }: { daily: WhoopDailyMetric[]; workouts: 
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="rounded-xl border border-line bg-white p-4">
+            <div className="rounded-xl border border-line bg-control-surface p-4">
               <h3 className="font-display text-xl font-semibold">Schlafdetails</h3>
               <div className="mt-4 space-y-3 text-sm">
                 <p className="flex justify-between gap-3"><span className="text-muted">Im Bett</span><strong>{minutesToHours(latest.total_in_bed_minutes)}</strong></p>
@@ -102,7 +102,7 @@ function WhoopPanel({ daily, workouts }: { daily: WhoopDailyMetric[]; workouts: 
             </div>
           </div>
 
-          <div className="mt-5 rounded-xl border border-line bg-white p-4">
+          <div className="mt-5 rounded-xl border border-line bg-control-surface p-4">
             <h3 className="font-display text-xl font-semibold">Letzte Workouts</h3>
             {workouts.length ? (
               <div className="mt-3 divide-y divide-line">
@@ -209,7 +209,7 @@ export function Health() {
   return (
     <>
       <PageHeader
-        action={<div className="flex gap-2"><Link className="rounded-xl border border-line bg-white px-4 py-3 text-sm font-bold" to="/einkaufsliste">Einkaufsliste</Link><Link className="rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white" to="/ernaehrung">Zum Wochenplan</Link></div>}
+        action={<div className="flex gap-2"><Link className="rounded-xl border border-line bg-control-surface px-4 py-3 text-sm font-bold" to="/einkaufsliste">Einkaufsliste</Link><Link className="rounded-xl bg-control-deep px-4 py-3 text-sm font-bold text-white" to="/ernaehrung">Zum Wochenplan</Link></div>}
         description="Die Grundlage fuer Gewichtstrend, Ernaehrungsplan und WHOOP-Anpassungen."
         eyebrow="Gesundheit & Ernaehrung"
         title="Dein Abnehmprofil"
@@ -222,8 +222,8 @@ export function Health() {
             <Panel className="p-4 sm:p-5"><Activity className="text-blue" size={19} /><p className="mt-4 text-xs font-semibold text-muted">Orientierungszeitraum</p><p className="mt-1 font-display text-3xl font-semibold">{projection || '-'} <span className="text-base">Wochen</span></p></Panel>
           </div>
           <div className="grid gap-5 xl:grid-cols-[1.35fr_0.8fr]">
-            <Panel><SectionTitle title="Gewichtstrend" description="Der 7-Tage-Durchschnitt glaettet normale taegliche Schwankungen." /><div className="mb-4 flex gap-2"><input aria-label="Heutiges Gewicht" className="min-w-0 flex-1 rounded-xl border border-line bg-soft px-3.5 py-3 text-sm" min="30" onChange={(event) => setNewWeight(event.target.value)} placeholder="Heutiges Gewicht in kg" step="0.1" type="number" value={newWeight} /><button className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 text-sm font-bold text-white" onClick={() => void addWeight()} type="button"><Plus size={16} /> Eintragen</button></div>{entries.length ? <div className="h-56"><ResponsiveContainer height="100%" width="100%"><LineChart data={entries}><XAxis dataKey="measured_on" fontSize={11} tickFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })} /><YAxis domain={['dataMin - 1', 'dataMax + 1']} fontSize={11} width={42} /><Tooltip formatter={(value) => [`${Number(value).toFixed(1)} kg`, 'Gewicht']} labelFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH')} /><Line dataKey="weight" dot={{ r: 3 }} stroke="#3f6b57" strokeWidth={2} type="monotone" /></LineChart></ResponsiveContainer></div> : <p className="py-16 text-center text-sm text-muted">Trage dein erstes Gewicht ein.</p>}<p className="mt-3 text-sm font-semibold text-accent">7-Tage-Trend: {trend ? `${trend.toFixed(1)} kg` : 'noch nicht verfuegbar'}</p></Panel>
-            <Panel className="bg-ink text-white"><p className="text-xs font-bold uppercase tracking-[0.18em] text-positive-light">Taeglicher Orientierungsrahmen</p>{targets ? <><p className="mt-6 font-display text-4xl font-semibold">{targets.calories} kcal</p><p className="mt-2 text-sm text-white/60">Erhaltung geschaetzt: {targets.maintenance} kcal</p><div className="mt-6 rounded-xl bg-white/10 p-4"><p className="text-xs text-white/55">Proteinziel</p><p className="mt-1 font-display text-2xl font-semibold">{targets.protein} g / Tag</p></div></> : <p className="mt-6 text-sm leading-6 text-white/65">Ergaenze Geburtsdatum, Groesse, Gewicht und Geschlecht, damit ein Rahmen berechnet werden kann.</p>}<p className="mt-6 text-xs leading-5 text-white/45">Schaetzung, keine medizinische Ernaehrungsempfehlung. Anpassungen erfolgen spaeter anhand des Wochentrends.</p></Panel>
+            <Panel><SectionTitle title="Gewichtstrend" description="Der 7-Tage-Durchschnitt glaettet normale taegliche Schwankungen." /><div className="mb-4 flex gap-2"><input aria-label="Heutiges Gewicht" className="min-w-0 flex-1 rounded-xl border border-line bg-soft px-3.5 py-3 text-sm" min="30" onChange={(event) => setNewWeight(event.target.value)} placeholder="Heutiges Gewicht in kg" step="0.1" type="number" value={newWeight} /><button className="inline-flex items-center gap-2 rounded-xl bg-control-deep px-4 text-sm font-bold text-white" onClick={() => void addWeight()} type="button"><Plus size={16} /> Eintragen</button></div>{entries.length ? <div className="h-56"><ResponsiveContainer height="100%" width="100%"><LineChart data={entries}><XAxis dataKey="measured_on" fontSize={11} tickFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })} /><YAxis domain={['dataMin - 1', 'dataMax + 1']} fontSize={11} width={42} /><Tooltip formatter={(value) => [`${Number(value).toFixed(1)} kg`, 'Gewicht']} labelFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH')} /><Line dataKey="weight" dot={{ r: 3 }} stroke="#00D4FF" strokeWidth={2} type="monotone" /></LineChart></ResponsiveContainer></div> : <p className="py-16 text-center text-sm text-muted">Trage dein erstes Gewicht ein.</p>}<p className="mt-3 text-sm font-semibold text-accent">7-Tage-Trend: {trend ? `${trend.toFixed(1)} kg` : 'noch nicht verfuegbar'}</p></Panel>
+            <Panel className="bg-control-deep text-white"><p className="text-xs font-bold uppercase tracking-[0.18em] text-positive-light">Taeglicher Orientierungsrahmen</p>{targets ? <><p className="mt-6 font-display text-4xl font-semibold">{targets.calories} kcal</p><p className="mt-2 text-sm text-white/60">Erhaltung geschaetzt: {targets.maintenance} kcal</p><div className="mt-6 rounded-xl bg-control-hover p-4"><p className="text-xs text-white/55">Proteinziel</p><p className="mt-1 font-display text-2xl font-semibold">{targets.protein} g / Tag</p></div></> : <p className="mt-6 text-sm leading-6 text-white/65">Ergaenze Geburtsdatum, Groesse, Gewicht und Geschlecht, damit ein Rahmen berechnet werden kann.</p>}<p className="mt-6 text-xs leading-5 text-white/45">Schaetzung, keine medizinische Ernaehrungsempfehlung. Anpassungen erfolgen spaeter anhand des Wochentrends.</p></Panel>
           </div>
           <WhoopPanel daily={whoopDaily} workouts={whoopWorkouts} />
           <Panel><SectionTitle title="Koerper & Ziel" description="Diese Angaben bestimmen spaeter den sicheren Ausgangsrahmen." /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -242,7 +242,7 @@ export function Health() {
             <label><span className={label}>Mag ich nicht</span><textarea className={`${field} min-h-24`} onChange={(event) => update('dislikes', event.target.value)} placeholder="Lebensmittel ausschliessen" value={form.dislikes} /></label>
             <label><span className={label}>Weitere Hinweise</span><textarea className={`${field} min-h-24`} onChange={(event) => update('notes', event.target.value)} placeholder="Arbeitszeiten, Kochzeit, Besonderheiten" value={form.notes} /></label>
           </div></Panel>
-          <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center"><div>{message && <p className="text-sm font-semibold text-positive">{message}</p>}{error && <p className="text-sm font-semibold text-red-700">{error}</p>}</div><button className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-3.5 text-sm font-bold text-white disabled:opacity-60" disabled={saving} type="submit"><Save size={17} /> {saving ? 'Speichert ...' : 'Abnehmprofil speichern'}</button></div>
+          <div className="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center"><div>{message && <p className="text-sm font-semibold text-positive">{message}</p>}{error && <p className="text-sm font-semibold text-status-danger">{error}</p>}</div><button className="inline-flex items-center justify-center gap-2 rounded-xl bg-control-deep px-5 py-3.5 text-sm font-bold text-white disabled:opacity-60" disabled={saving} type="submit"><Save size={17} /> {saving ? 'Speichert ...' : 'Abnehmprofil speichern'}</button></div>
         </form>
       )}
     </>

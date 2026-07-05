@@ -5,7 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { loadFinanceTransactionsRange, type FinanceTransaction } from '../services/finance'
 import { Panel, SectionTitle } from './Panel'
 
-const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white'
+const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-control-hover'
 const label = 'text-xs font-bold uppercase tracking-wider text-muted'
 
 type PeriodMode = 'year' | 'month' | 'custom'
@@ -212,7 +212,7 @@ export function FinanceStats({ refreshKey, userId }: { refreshKey: string; userI
         </label>
       </div>
 
-      {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+      {error && <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-status-danger">{error}</p>}
       {loading && <p className="mt-4 text-sm text-muted">Statistik wird geladen ...</p>}
 
       <div className="mt-5 grid gap-3 md:grid-cols-5">
@@ -222,17 +222,17 @@ export function FinanceStats({ refreshKey, userId }: { refreshKey: string; userI
         </div>
         <div className="rounded-xl bg-soft p-4">
           <p className="text-xs text-muted">Ausgaben</p>
-          <p className="mt-1 font-display text-xl font-semibold text-red-700">{money(totals.expenses)}</p>
+          <p className="mt-1 font-display text-xl font-semibold text-status-danger">{money(totals.expenses)}</p>
         </div>
         <div className="rounded-xl bg-soft p-4">
           <p className="text-xs text-muted">Cashflow</p>
-          <p className={`mt-1 font-display text-xl font-semibold ${totals.cashflow < 0 ? 'text-red-700' : 'text-positive'}`}>
+          <p className={`mt-1 font-display text-xl font-semibold ${totals.cashflow < 0 ? 'text-status-danger' : 'text-positive'}`}>
             {money(totals.cashflow)}
           </p>
         </div>
         <div className="rounded-xl bg-soft p-4">
           <p className="text-xs text-muted">Sparquote</p>
-          <p className={`mt-1 font-display text-xl font-semibold ${totals.savingsRate < 0 ? 'text-red-700' : 'text-accent'}`}>
+          <p className={`mt-1 font-display text-xl font-semibold ${totals.savingsRate < 0 ? 'text-status-danger' : 'text-accent'}`}>
             {totals.savingsRate.toFixed(0)} %
           </p>
         </div>
@@ -243,7 +243,7 @@ export function FinanceStats({ refreshKey, userId }: { refreshKey: string; userI
       </div>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[1.4fr_0.8fr]">
-        <div className="min-h-72 rounded-xl border border-line bg-white p-4">
+        <div className="min-h-72 rounded-xl border border-line bg-control-surface p-4">
           {chartData.length ? (
             <ResponsiveContainer height={280} width="100%">
               <BarChart data={chartData}>
@@ -266,7 +266,7 @@ export function FinanceStats({ refreshKey, userId }: { refreshKey: string; userI
           )}
         </div>
 
-        <div className="rounded-xl border border-line bg-white p-4">
+        <div className="rounded-xl border border-line bg-control-surface p-4">
           <h3 className="font-display text-xl font-semibold">Top-Ausgaben</h3>
           <div className="mt-4 space-y-3">
             {rankedCategories.length ? (
@@ -299,7 +299,7 @@ export function FinanceStats({ refreshKey, userId }: { refreshKey: string; userI
               <span className="truncate">{transaction.description}</span>
               <span className="text-muted">{transaction.category}</span>
               <span className="text-muted">{typeLabel(transaction.transaction_type)}</span>
-              <span className={transaction.transaction_type === 'income' ? 'font-bold text-positive' : 'font-bold text-red-700'}>
+              <span className={transaction.transaction_type === 'income' ? 'font-bold text-positive' : 'font-bold text-status-danger'}>
                 {money(Number(transaction.amount))}
               </span>
             </div>

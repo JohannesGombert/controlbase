@@ -147,10 +147,10 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
         {meal.photo_data_url && (
           <img alt={`Foto von ${meal.title}`} className="mt-3 h-28 w-full rounded-xl object-cover" src={meal.photo_data_url} />
         )}
-        {error && <p className="mt-2 text-xs font-semibold text-red-700">{error}</p>}
+        {error && <p className="mt-2 text-xs font-semibold text-status-danger">{error}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <button
-            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold ${eaten ? 'bg-positive text-white' : 'border border-line bg-white text-muted'}`}
+            className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold ${eaten ? 'bg-positive text-white' : 'border border-line bg-control-surface text-muted'}`}
             disabled={saving}
             onClick={(event) => {
               event.stopPropagation()
@@ -162,7 +162,7 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
             {eaten ? 'Gegessen' : 'Als gegessen markieren'}
           </button>
           <label
-            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-line bg-white px-3 py-1.5 text-xs font-bold text-muted"
+            className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-line bg-control-surface px-3 py-1.5 text-xs font-bold text-muted"
             onClick={(event) => event.stopPropagation()}
           >
             <Camera size={13} /> Foto
@@ -189,13 +189,13 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
 
       {open && (
         <div
-          className="fixed inset-0 z-[80] grid place-items-center bg-ink/55 p-4"
+          className="fixed inset-0 z-[80] grid place-items-center bg-control-bg/75 p-4"
           onMouseDown={() => setOpen(false)}
           role="presentation"
         >
           <article
             aria-modal="true"
-            className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            className="max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-2xl bg-control-surface p-6 shadow-2xl"
             onMouseDown={(event) => event.stopPropagation()}
             role="dialog"
           >
@@ -258,7 +258,7 @@ export function MealCard({ meal, onChanged }: { meal: Meal; onChanged?: () => vo
             <ol className="mt-2 space-y-3">
               {steps.map((step, index) => (
                 <li className="flex gap-3 text-sm leading-6" key={step}>
-                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-ink text-xs font-bold text-white">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-control-deep text-xs font-bold text-white">
                     {index + 1}
                   </span>
                   {step}

@@ -4,7 +4,7 @@ import { parseBankStatement, type ParsedBankTransaction } from '../services/bank
 import { importTransactions, type FinanceAccount } from '../services/finance'
 import { Panel, SectionTitle } from './Panel'
 
-const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white'
+const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-control-hover'
 const label = 'text-xs font-bold uppercase tracking-wider text-muted'
 const defaultCategories = [
   'Lebensmittel',
@@ -181,7 +181,7 @@ export function BankStatementImport({
 
         <label className="block">
           <span className={label}>PDF-Datei</span>
-          <span className="mt-2 flex min-h-[46px] cursor-pointer items-center gap-3 rounded-xl border border-dashed border-line bg-soft px-3.5 py-3 text-sm text-muted hover:bg-white">
+          <span className="mt-2 flex min-h-[46px] cursor-pointer items-center gap-3 rounded-xl border border-dashed border-line bg-soft px-3.5 py-3 text-sm text-muted hover:bg-control-hover">
             <FileUp size={17} />
             Kontoauszug auswaehlen
             <input
@@ -195,7 +195,7 @@ export function BankStatementImport({
         </label>
 
         <button
-          className="mt-auto inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-ink px-5 text-sm font-bold text-white disabled:opacity-60"
+          className="mt-auto inline-flex min-h-[46px] items-center justify-center gap-2 rounded-xl bg-control-deep px-5 text-sm font-bold text-white disabled:opacity-60"
           disabled={!selectedRows.length || saving}
           onClick={() => void saveSelected()}
           type="button"
@@ -221,7 +221,7 @@ export function BankStatementImport({
             </div>
             <div className="rounded-xl bg-soft p-4">
               <p className="text-xs text-muted">Ausgaben</p>
-              <p className="mt-1 font-display text-2xl font-semibold text-red-700">{money(summary.expenses)}</p>
+              <p className="mt-1 font-display text-2xl font-semibold text-status-danger">{money(summary.expenses)}</p>
             </div>
             <div className="rounded-xl bg-soft p-4">
               <p className="text-xs text-muted">Transfers</p>
@@ -232,7 +232,7 @@ export function BankStatementImport({
           <div className="mt-5 rounded-xl border border-line bg-soft p-3">
             <div className="flex flex-wrap gap-2">
               <button
-                className={`rounded-full px-3 py-1.5 text-xs font-bold ${activeMonth === 'all' ? 'bg-ink text-white' : 'bg-white text-muted'}`}
+                className={`rounded-full px-3 py-1.5 text-xs font-bold ${activeMonth === 'all' ? 'bg-control-deep text-white' : 'bg-control-surface text-muted'}`}
                 onClick={() => setActiveMonth('all')}
                 type="button"
               >
@@ -241,7 +241,7 @@ export function BankStatementImport({
               {monthSummaries.map(([key, month]) => (
                 <button
                   className={`rounded-full px-3 py-1.5 text-xs font-bold ${
-                    activeMonth === key ? 'bg-ink text-white' : 'bg-white text-muted'
+                    activeMonth === key ? 'bg-control-deep text-white' : 'bg-control-surface text-muted'
                   }`}
                   key={key}
                   onClick={() => setActiveMonth(key)}
@@ -274,7 +274,7 @@ export function BankStatementImport({
                 <label>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Beschreibung</span>
                   <input
-                    className="mt-1 w-full rounded-lg border border-line bg-white px-2 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-line bg-control-surface px-2 py-2 text-sm"
                     onChange={(event) => updateRow(row.id, { description: event.target.value })}
                     value={row.description}
                   />
@@ -282,7 +282,7 @@ export function BankStatementImport({
                 <label>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Art</span>
                   <select
-                    className="mt-1 w-full rounded-lg border border-line bg-white px-2 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-line bg-control-surface px-2 py-2 text-sm"
                     onChange={(event) =>
                       updateRow(row.id, { transactionType: event.target.value as ParsedBankTransaction['transactionType'] })
                     }
@@ -296,7 +296,7 @@ export function BankStatementImport({
                 <label>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Kategorie</span>
                   <select
-                    className="mt-1 w-full rounded-lg border border-line bg-white px-2 py-2 text-sm"
+                    className="mt-1 w-full rounded-lg border border-line bg-control-surface px-2 py-2 text-sm"
                     onChange={(event) => updateRow(row.id, { category: event.target.value })}
                     value={row.category}
                   >
@@ -313,7 +313,7 @@ export function BankStatementImport({
                         ? 'text-positive'
                         : row.transactionType === 'transfer'
                           ? 'text-accent'
-                          : 'text-red-700'
+                          : 'text-status-danger'
                     }`}
                   >
                     {typeLabel(row.transactionType)} · {money(row.amount)}

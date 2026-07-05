@@ -1,28 +1,113 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #f5f4ef;
-  --color-soft: #f3f2ed;
-  --color-line: #deddd5;
-  --color-ink: #19201d;
-  --color-muted: #70756f;
-  --color-accent: #3f6b57;
-  --color-positive: #257453;
-  --color-positive-light: #8bd7b1;
-  --color-warning: #b17b16;
-  --color-warning-light: #f0c56b;
-  --color-blue: #315b77;
-  --color-blue-soft: #e6eff4;
+  --color-control-bg: #070B1A;
+  --color-control-deep: #000741;
+  --color-control-graphite: #1F2329;
+  --color-control-surface: #111827;
+  --color-control-hover: #172033;
+  --color-control-input: #0D1324;
+  --color-control-border: #2A3140;
+  --color-control-borderStrong: #3A4558;
+  --color-control-text: #F5F7FA;
+  --color-control-secondary: #A7B0C0;
+  --color-control-muted: #6F7A8A;
+
+  --color-status-primary: #00D4FF;
+  --color-status-success: #2EEA8B;
+  --color-status-warning: #FFB020;
+  --color-status-danger: #FF4D4D;
+  --color-status-ceo: #7C5CFF;
+
+  --color-canvas: #070B1A;
+  --color-soft: #0D1324;
+  --color-line: #2A3140;
+  --color-ink: #F5F7FA;
+  --color-muted: #A7B0C0;
+  --color-accent: #00D4FF;
+  --color-positive: #2EEA8B;
+  --color-positive-light: #2EEA8B;
+  --color-warning: #FFB020;
+  --color-warning-light: #FFB020;
+  --color-blue: #7C5CFF;
+  --color-blue-soft: #172033;
+
   --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: Georgia, Cambria, "Times New Roman", serif;
-  --shadow-card: 0 1px 1px rgb(25 32 29 / 0.03), 0 8px 24px rgb(25 32 29 / 0.025);
+  --font-display: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --shadow-card: 0 18px 50px rgb(0 0 0 / 0.28);
+  --shadow-glow: 0 0 40px rgb(0 212 255 / 0.12);
+}
+
+:root {
+  --color-bg: #070B1A;
+  --color-bg-deep: #000741;
+  --color-graphite: #1F2329;
+  --color-surface: #111827;
+  --color-surface-hover: #172033;
+  --color-surface-input: #0D1324;
+  --color-border: #2A3140;
+  --color-border-strong: #3A4558;
+  --color-text: #F5F7FA;
+  --color-text-secondary: #A7B0C0;
+  --color-text-muted: #6F7A8A;
+  --color-primary: #00D4FF;
+  --color-primary-soft: rgba(0, 212, 255, 0.12);
+  --color-success: #2EEA8B;
+  --color-success-soft: rgba(46, 234, 139, 0.12);
+  --color-warning: #FFB020;
+  --color-warning-soft: rgba(255, 176, 32, 0.12);
+  --color-danger: #FF4D4D;
+  --color-danger-soft: rgba(255, 77, 77, 0.12);
+  --color-ceo: #7C5CFF;
+  --color-ceo-soft: rgba(124, 92, 255, 0.12);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --shadow-card: 0 18px 50px rgba(0, 0, 0, 0.28);
+  --shadow-glow: 0 0 40px rgba(0, 212, 255, 0.12);
+  --font-main: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 @layer base {
   * { box-sizing: border-box; }
-  html { background: var(--color-canvas); }
-  body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--color-canvas); color: var(--color-ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  html { background: var(--color-bg); }
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(0, 212, 255, 0.08), transparent 34rem),
+      radial-gradient(circle at 100% 10%, rgba(124, 92, 255, 0.08), transparent 30rem),
+      var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-main);
+    -webkit-font-smoothing: antialiased;
+  }
   button, input, select, textarea { font: inherit; }
   button, a { -webkit-tap-highlight-color: transparent; }
-  ::selection { background: #cdded5; color: var(--color-ink); }
+  input, select, textarea { color-scheme: dark; }
+  ::placeholder { color: rgba(167, 176, 192, 0.58); }
+  ::selection { background: rgba(0, 212, 255, 0.25); color: var(--color-text); }
+}
+
+@layer components {
+  .executive-primary {
+    background: linear-gradient(135deg, #00D4FF, #2EEA8B);
+    color: #020617;
+    box-shadow: 0 12px 28px rgba(0, 212, 255, 0.16);
+  }
+
+  .executive-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+
+  .executive-input {
+    background: var(--color-surface-input);
+    border-color: var(--color-border);
+    color: var(--color-text);
+  }
 }

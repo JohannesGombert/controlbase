@@ -1,7 +1,7 @@
 export function Privacy() {
   return (
     <main className="min-h-screen bg-paper px-6 py-10 text-ink">
-      <article className="mx-auto max-w-3xl rounded-2xl border border-line bg-white p-8 shadow-card">
+      <article className="mx-auto max-w-3xl rounded-2xl border border-line bg-control-surface p-8 shadow-card">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">ControlBase</p>
         <h1 className="mt-3 font-display text-4xl font-semibold">Privacy Policy</h1>
         <p className="mt-4 text-sm leading-7 text-muted">

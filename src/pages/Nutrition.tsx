@@ -55,7 +55,7 @@ export function Nutrition() {
     <>
       <PageHeader
         action={
-          <div className="flex items-center rounded-xl border border-line bg-white p-1">
+          <div className="flex items-center rounded-xl border border-line bg-control-surface p-1">
             <button
               aria-label="Vorherige Woche"
               className="grid size-9 place-items-center"
@@ -82,7 +82,7 @@ export function Nutrition() {
         title="Wochenplan"
       />
 
-      {error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+      {error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-status-danger">{error}</p>}
 
       <div className="mb-5 grid gap-4 sm:grid-cols-[1fr_auto_auto]">
         <Panel className="p-4 sm:p-5">
@@ -99,13 +99,13 @@ export function Nutrition() {
           </div>
         </Panel>
         <Link
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-white px-5 py-3 text-sm font-bold"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-control-surface px-5 py-3 text-sm font-bold"
           to="/einkaufsliste"
         >
           <ShoppingCart size={17} /> Einkaufsliste
         </Link>
         <button
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-control-deep px-5 py-3 text-sm font-bold text-white disabled:opacity-60"
           disabled={loading}
           onClick={() => void generate()}
           type="button"

@@ -36,7 +36,7 @@ import {
   type FinanceTransaction,
 } from '../services/finance'
 
-const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white'
+const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-control-hover'
 const label = 'text-xs font-bold uppercase tracking-wider text-muted'
 const expenseCategories = [
   'Wohnen',
@@ -80,21 +80,21 @@ function AccountRow({ account, onSave }: { account: FinanceAccount; onSave: (id:
           <h3 className="font-bold">{account.name}</h3>
           <p className="mt-1 text-xs text-muted">{accountTypes[account.account_type] ?? account.account_type}</p>
         </div>
-        <p className={`font-display text-xl font-semibold ${account.balance < 0 ? 'text-red-700' : ''}`}>
+        <p className={`font-display text-xl font-semibold ${account.balance < 0 ? 'text-status-danger' : ''}`}>
           {money(account.balance)}
         </p>
       </div>
       <div className="mt-3 flex gap-2">
         <input
           aria-label={`Saldo ${account.name}`}
-          className="min-w-0 flex-1 rounded-lg border border-line bg-white px-3 py-2 text-sm"
+          className="min-w-0 flex-1 rounded-lg border border-line bg-control-surface px-3 py-2 text-sm"
           onChange={(event) => setBalance(event.target.value)}
           step="0.01"
           type="number"
           value={balance}
         />
         <button
-          className="rounded-lg bg-ink px-3 text-xs font-bold text-white disabled:opacity-60"
+          className="rounded-lg bg-control-deep px-3 text-xs font-bold text-white disabled:opacity-60"
           disabled={saving}
           onClick={async () => {
             setSaving(true)
@@ -126,7 +126,7 @@ function TransactionIcon({ item }: { item: FinanceTransaction }) {
     )
   }
   return (
-    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-red-50 text-red-700">
+    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-red-50 text-status-danger">
       <ArrowUpRight size={17} />
     </span>
   )
@@ -267,14 +267,14 @@ function TransactionRow({
           </label>
           <div className="flex items-end gap-2">
             <button
-              className="inline-flex h-[46px] items-center justify-center gap-2 rounded-xl bg-ink px-4 text-sm font-bold text-white disabled:opacity-60"
+              className="inline-flex h-[46px] items-center justify-center gap-2 rounded-xl bg-control-deep px-4 text-sm font-bold text-white disabled:opacity-60"
               disabled={saving}
               type="submit"
             >
               <Save size={16} /> Speichern
             </button>
             <button
-              className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-line bg-white text-muted"
+              className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-line bg-control-surface text-muted"
               onClick={() => setEditing(false)}
               title="Abbrechen"
               type="button"
@@ -300,7 +300,7 @@ function TransactionRow({
           {item.source ? ` · ${item.source}` : ''}
         </p>
       </button>
-      <p className={`text-sm font-bold ${isIncome ? 'text-positive' : isTransfer ? 'text-accent' : 'text-red-700'}`}>
+      <p className={`text-sm font-bold ${isIncome ? 'text-positive' : isTransfer ? 'text-accent' : 'text-status-danger'}`}>
         {isIncome ? '+' : isTransfer ? '↔ ' : '−'}
         {money(Number(item.amount))}
       </p>
@@ -314,7 +314,7 @@ function TransactionRow({
       </button>
       <button
         aria-label={`${item.description} loeschen`}
-        className="grid size-8 place-items-center text-muted hover:text-red-700"
+        className="grid size-8 place-items-center text-muted hover:text-status-danger"
         onClick={() => void onDelete()}
         type="button"
       >
@@ -375,7 +375,7 @@ function CategoryManager({
           </select>
         </label>
         <button
-          className="mt-auto inline-flex h-[46px] items-center justify-center rounded-xl bg-ink px-4 text-sm font-bold text-white disabled:opacity-60"
+          className="mt-auto inline-flex h-[46px] items-center justify-center rounded-xl bg-control-deep px-4 text-sm font-bold text-white disabled:opacity-60"
           disabled={saving}
           type="submit"
         >
@@ -390,7 +390,7 @@ function CategoryManager({
               <span className="font-normal">· {category.category_type === 'expense' ? 'Ausgabe' : category.category_type === 'income' ? 'Einnahme' : 'Transfer'}</span>
               <button
                 aria-label={`${category.name} loeschen`}
-                className="text-muted hover:text-red-700"
+                className="text-muted hover:text-status-danger"
                 onClick={() => void onDelete(category.id)}
                 type="button"
               >
@@ -585,7 +585,7 @@ export function Finance() {
     <>
       <PageHeader
         action={
-          <label className="block rounded-xl border border-line bg-white px-4 py-3">
+          <label className="block rounded-xl border border-line bg-control-surface px-4 py-3">
             <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">Monat</span>
             <input
               className="mt-1 bg-transparent text-sm font-bold outline-none"
@@ -600,15 +600,15 @@ export function Finance() {
         title="Finanzen"
       />
 
-      {error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
+      {error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-status-danger">{error}</p>}
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         {[
           ['Nettovermoegen', money(totals.netWorth), WalletCards, 'text-ink'],
           ['Einnahmen', money(totals.income), ArrowDownLeft, 'text-positive'],
-          ['Ausgaben', money(totals.expenses), ArrowUpRight, 'text-red-700'],
-          ['Cashflow', money(totals.cashflow), PiggyBank, totals.cashflow < 0 ? 'text-red-700' : 'text-positive'],
-          ['Sparquote', `${totals.savingsRate.toFixed(0)} %`, Landmark, totals.savingsRate < 0 ? 'text-red-700' : 'text-accent'],
+          ['Ausgaben', money(totals.expenses), ArrowUpRight, 'text-status-danger'],
+          ['Cashflow', money(totals.cashflow), PiggyBank, totals.cashflow < 0 ? 'text-status-danger' : 'text-positive'],
+          ['Sparquote', `${totals.savingsRate.toFixed(0)} %`, Landmark, totals.savingsRate < 0 ? 'text-status-danger' : 'text-accent'],
         ].map(([title, value, Icon, color]) => (
           <Panel className="p-4 sm:p-5" key={String(title)}>
             <div className="flex items-start justify-between gap-2">
@@ -668,7 +668,7 @@ export function Finance() {
               />
             </label>
             <button
-              className="mt-auto inline-flex h-[46px] items-center justify-center rounded-xl bg-ink px-4 text-white disabled:opacity-60"
+              className="mt-auto inline-flex h-[46px] items-center justify-center rounded-xl bg-control-deep px-4 text-white disabled:opacity-60"
               disabled={saving === 'account'}
               title="Konto hinzufuegen"
               type="submit"
@@ -787,7 +787,7 @@ export function Finance() {
               />
             </label>
             <button
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3.5 text-sm font-bold text-white disabled:opacity-60"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-control-deep px-4 py-3.5 text-sm font-bold text-white disabled:opacity-60"
               disabled={saving === 'transaction'}
               type="submit"
             >
@@ -836,13 +836,13 @@ export function Finance() {
                         {new Date(`${item.transaction_date}T12:00:00`).toLocaleDateString('de-CH')} · {item.category}
                       </p>
                     </div>
-                    <p className={`text-sm font-bold ${isIncome ? 'text-positive' : isTransfer ? 'text-accent' : 'text-red-700'}`}>
+                    <p className={`text-sm font-bold ${isIncome ? 'text-positive' : isTransfer ? 'text-accent' : 'text-status-danger'}`}>
                       {isIncome ? '+' : isTransfer ? '↔ ' : '−'}
                       {money(Number(item.amount))}
                     </p>
                     <button
                       aria-label={`${item.description} loeschen`}
-                      className="grid size-8 place-items-center text-muted hover:text-red-700"
+                      className="grid size-8 place-items-center text-muted hover:text-status-danger"
                       onClick={async () => {
                         await deleteTransaction(item.id)
                         await refresh()
@@ -888,7 +888,7 @@ export function Finance() {
               type="number"
               value={budgetForm.limitAmount}
             />
-            <button className="grid size-11 place-items-center rounded-xl bg-ink text-white" title="Budget speichern" type="submit">
+            <button className="grid size-11 place-items-center rounded-xl bg-control-deep text-white" title="Budget speichern" type="submit">
               <Save size={17} />
             </button>
           </form>
@@ -901,7 +901,7 @@ export function Finance() {
                   <div key={budget.id}>
                     <div className="flex justify-between gap-3 text-sm">
                       <span className="font-semibold">{budget.category}</span>
-                      <span className={spent > Number(budget.limit_amount) ? 'font-bold text-red-700' : 'text-muted'}>
+                      <span className={spent > Number(budget.limit_amount) ? 'font-bold text-status-danger' : 'text-muted'}>
                         {money(spent)} / {money(Number(budget.limit_amount))}
                       </span>
                     </div>
