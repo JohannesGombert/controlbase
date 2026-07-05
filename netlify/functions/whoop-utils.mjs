@@ -14,10 +14,15 @@ export function json(statusCode, body) {
 
 let cachedSupabase = null
 
-export async function adminClient() {
+function supabaseEnv() {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !serviceKey) throw new Error('SUPABASE_URL/VITE_SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY fehlen.')
+  return { serviceKey, url }
+}
+
+export async function adminClient() {
+  const { serviceKey, url } = supabaseEnv()
   if (cachedSupabase) return cachedSupabase
   if (!globalThis.WebSocket) globalThis.WebSocket = WebSocket
   const { createClient } = await import('@supabase/supabase-js')
@@ -28,14 +33,29 @@ export async function adminClient() {
   return cachedSupabase
 }
 
+async function verifySupabaseUser(token) {
+  const { serviceKey, url } = supabaseEnv()
+  const response = await fetch(`${url}/auth/v1/user`, {
+    headers: {
+      apikey: serviceKey,
+      authorization: `Bearer ${token}`,
+    },
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok || !data?.id) {
+    const reason = data?.msg ?? data?.message ?? data?.error_description ?? data?.error ?? `HTTP ${response.status}`
+    throw new Error(`Session ist nicht gueltig: ${reason}`)
+  }
+  return data
+}
+
 export async function requireUser(event) {
   const header = event.headers.authorization ?? event.headers.Authorization ?? ''
   const token = header.replace(/^Bearer\s+/i, '')
   if (!token) throw new Error('Nicht angemeldet.')
   const supabase = await adminClient()
-  const { data, error } = await supabase.auth.getUser(token)
-  if (error || !data.user) throw new Error('Session ist nicht gueltig.')
-  return { supabase, user: data.user }
+  const user = await verifySupabaseUser(token)
+  return { supabase, user }
 }
 
 export function siteUrl(event) {
