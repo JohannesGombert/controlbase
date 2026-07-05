@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import crypto from 'node:crypto'
+import WebSocket from 'ws'
 
 export const WHOOP_API = 'https://api.prod.whoop.com'
 export const WHOOP_SCOPES = 'read:cycles read:recovery read:sleep read:workout'
@@ -12,18 +12,27 @@ export function json(statusCode, body) {
   }
 }
 
-export function adminClient() {
+let cachedSupabase = null
+
+export async function adminClient() {
   const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !serviceKey) throw new Error('SUPABASE_URL/VITE_SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY fehlen.')
-  return createClient(url, serviceKey, { auth: { persistSession: false } })
+  if (cachedSupabase) return cachedSupabase
+  if (!globalThis.WebSocket) globalThis.WebSocket = WebSocket
+  const { createClient } = await import('@supabase/supabase-js')
+  cachedSupabase = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    realtime: { WebSocket },
+  })
+  return cachedSupabase
 }
 
 export async function requireUser(event) {
   const header = event.headers.authorization ?? event.headers.Authorization ?? ''
   const token = header.replace(/^Bearer\s+/i, '')
   if (!token) throw new Error('Nicht angemeldet.')
-  const supabase = adminClient()
+  const supabase = await adminClient()
   const { data, error } = await supabase.auth.getUser(token)
   if (error || !data.user) throw new Error('Session ist nicht gueltig.')
   return { supabase, user: data.user }

@@ -12,7 +12,7 @@ export async function handler(event) {
       grant_type: 'authorization_code',
       redirect_uri: redirectUri(event),
     })
-    const supabase = adminClient()
+    const supabase = await adminClient()
     const { error } = await supabase.from('whoop_connections').upsert(
       {
         access_token: token.access_token,
