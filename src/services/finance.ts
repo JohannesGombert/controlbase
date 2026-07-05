@@ -178,6 +178,29 @@ export async function updateTransaction(
   if (error) throw error
 }
 
+export async function updateSimilarTransactionCategories(
+  userId: string,
+  reference: Pick<FinanceTransaction, 'description' | 'original_description' | 'transaction_type'>,
+  category: string,
+) {
+  const matchValue = reference.original_description?.trim() || reference.description.trim()
+  if (!matchValue) return 0
+
+  let query = client()
+    .from('finance_transactions')
+    .update({ category }, { count: 'exact' })
+    .eq('user_id', userId)
+    .eq('transaction_type', reference.transaction_type)
+
+  query = reference.original_description?.trim()
+    ? query.eq('original_description', matchValue)
+    : query.eq('description', matchValue)
+
+  const { count, error } = await query
+  if (error) throw error
+  return count ?? 0
+}
+
 export async function saveBudget(userId: string, month: Date, category: string, limitAmount: number) {
   const { error } = await client().from('finance_budgets').upsert({ user_id: userId, month: monthKey(month), category, limit_amount: limitAmount }, { onConflict: 'user_id,month,category' })
   if (error) throw error

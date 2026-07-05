@@ -29,6 +29,7 @@ import {
   loadFinance,
   saveBudget,
   updateAccountBalance,
+  updateSimilarTransactionCategories,
   updateTransaction,
   type FinanceAccount,
   type FinanceBudget,
@@ -143,7 +144,7 @@ function TransactionRow({
   categories: string[]
   item: FinanceTransaction
   onDelete: () => Promise<void>
-  onSave: (id: string, input: Parameters<typeof updateTransaction>[1]) => Promise<void>
+  onSave: (id: string, input: Parameters<typeof updateTransaction>[1], item: FinanceTransaction) => Promise<void>
 }) {
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -186,7 +187,7 @@ function TransactionRow({
         description: form.description,
         notes: form.notes,
         type: form.type,
-      })
+      }, item)
       setEditing(false)
     } finally {
       setSaving(false)
@@ -426,6 +427,7 @@ export function Finance() {
   const [budgetForm, setBudgetForm] = useState({ category: 'Lebensmittel', limitAmount: '' })
   const [saving, setSaving] = useState('')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [statsRefreshKey, setStatsRefreshKey] = useState('initial')
 
   const selectedMonth = useMemo(() => new Date(`${monthValue}-01T12:00:00`), [monthValue])
@@ -433,6 +435,7 @@ export function Finance() {
   const refresh = useCallback(async () => {
     if (!user) return
     setError('')
+    setMessage('')
     try {
       const data = await loadFinance(user.id, selectedMonth)
       setAccounts(data.accounts)
@@ -513,6 +516,7 @@ export function Finance() {
     if (!user) return
     setSaving('account')
     setError('')
+    setMessage('')
     try {
       await createAccount(user.id, {
         accountType: accountForm.accountType,
@@ -533,6 +537,7 @@ export function Finance() {
     if (!user) return
     setSaving('transaction')
     setError('')
+    setMessage('')
     try {
       await createTransaction(user.id, { ...transactionForm, amount: Number(transactionForm.amount) })
       setTransactionForm((current) => ({ ...current, amount: '', description: '', notes: '' }))
@@ -549,6 +554,7 @@ export function Finance() {
     if (!user) return
     setSaving('budget')
     setError('')
+    setMessage('')
     try {
       await saveBudget(user.id, selectedMonth, budgetForm.category, Number(budgetForm.limitAmount))
       setBudgetForm((current) => ({ ...current, limitAmount: '' }))
@@ -563,6 +569,7 @@ export function Finance() {
   async function addCategory(name: string, type: FinanceCategory['category_type']) {
     if (!user) return
     setError('')
+    setMessage('')
     try {
       await createCategory(user.id, { name, type })
       await refresh()
@@ -573,6 +580,7 @@ export function Finance() {
 
   async function removeCategory(id: string) {
     setError('')
+    setMessage('')
     try {
       await deleteCategory(id)
       await refresh()
@@ -601,6 +609,7 @@ export function Finance() {
       />
 
       {error && <p className="mb-5 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-status-danger">{error}</p>}
+      {message && <p className="mb-5 rounded-xl bg-status-success/10 px-4 py-3 text-sm font-semibold text-status-success">{message}</p>}
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         {[
@@ -818,9 +827,23 @@ export function Finance() {
                     await deleteTransaction(item.id)
                     await refresh()
                   }}
-                  onSave={async (id, input) => {
+                  onSave={async (id, input, transaction) => {
+                    if (!user) return
+                    setError('')
+                    setMessage('')
                     await updateTransaction(id, input)
+                    let similarCount = 0
+                    if (transaction.category !== input.category) {
+                      similarCount = await updateSimilarTransactionCategories(user.id, transaction, input.category)
+                    }
                     await refresh()
+                    if (transaction.category !== input.category) {
+                      setMessage(
+                        similarCount > 1
+                          ? `Kategorie auf ${similarCount} gleiche Buchungen übertragen.`
+                          : 'Kategorie gespeichert. Keine weiteren gleichen Buchungen gefunden.',
+                      )
+                    }
                   }}
                 />
               ))}
