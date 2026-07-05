@@ -1,11 +1,11 @@
-import { AlertTriangle, CheckCircle2, CircleOff, Database, ExternalLink, RefreshCw, ShieldCheck, Trash2, Watch } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, CircleOff, Database, ExternalLink, RefreshCw, ShieldCheck, Trash2, WalletCards, Watch } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
 import { Panel, SectionTitle } from '../components/Panel'
 import { DangerButton, FormInput, labelClass } from '../components/ui'
 import { isSupabaseConfigured } from '../lib/supabaseClient'
-import { resetAllUserData } from '../services/reset'
+import { resetAllUserData, resetFinanceData } from '../services/reset'
 import { loadWhoopStatus, startWhoopConnection, syncWhoop, type WhoopConnectionStatus } from '../services/whoop'
 
 function dateTime(value?: string | null) {
@@ -22,6 +22,8 @@ export function Settings() {
   const [resetting, setResetting] = useState(false)
   const [resetMessage, setResetMessage] = useState('')
   const [resetError, setResetError] = useState('')
+  const [financeResetConfirm, setFinanceResetConfirm] = useState('')
+  const [resettingFinance, setResettingFinance] = useState(false)
 
   const refreshWhoop = useCallback(async () => {
     if (!user) return
@@ -81,6 +83,22 @@ export function Settings() {
       setResetError(error instanceof Error ? error.message : 'Reset fehlgeschlagen.')
     } finally {
       setResetting(false)
+    }
+  }
+
+  async function resetFinance() {
+    if (financeResetConfirm !== 'FINANZEN') return
+    setResettingFinance(true)
+    setResetMessage('')
+    setResetError('')
+    try {
+      const result = await resetFinanceData()
+      setFinanceResetConfirm('')
+      setResetMessage(`Finanzbereich geleert. ${result.deletedTables.length} Datenbereiche wurden zurückgesetzt.`)
+    } catch (error) {
+      setResetError(error instanceof Error ? error.message : 'Finanz-Reset fehlgeschlagen.')
+    } finally {
+      setResettingFinance(false)
     }
   }
 
@@ -159,6 +177,41 @@ export function Settings() {
           <p className="mt-4 text-xs leading-5 text-muted">
             Wichtig: WHOOP Client Secret und Supabase Service Role Key werden nur in Netlify Functions genutzt, nicht im Browser.
           </p>
+        </Panel>
+        <Panel className="border-status-warning/35 lg:col-span-2">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-status-warning/10 text-status-warning">
+                <WalletCards size={19} />
+              </span>
+              <div>
+                <SectionTitle title="Finanzen leeren" description="Nur Finanzdaten dieses Kontos löschen." />
+                <div className="rounded-xl border border-status-warning/25 bg-status-warning/10 p-4 text-sm leading-6 text-muted">
+                  <p className="font-semibold text-ink">Diese Aktion löscht nur Konten, Buchungen, Budgets und eigene Finanzkategorien.</p>
+                  <p className="mt-1">Gesundheit, Ernährung, Check-ins, Ideen, Käufe, Reviews und WHOOP bleiben erhalten.</p>
+                </div>
+              </div>
+            </div>
+            <div className="w-full shrink-0 lg:w-80">
+              <label className="block">
+                <span className={labelClass}>Zur Bestätigung FINANZEN eingeben</span>
+                <FormInput
+                  autoComplete="off"
+                  onChange={(event) => setFinanceResetConfirm(event.target.value)}
+                  placeholder="FINANZEN"
+                  value={financeResetConfirm}
+                />
+              </label>
+              <DangerButton
+                className="mt-3 w-full border-status-warning bg-status-warning/10 text-status-warning hover:bg-status-warning/15"
+                disabled={resettingFinance || financeResetConfirm !== 'FINANZEN'}
+                onClick={() => void resetFinance()}
+                type="button"
+              >
+                <Trash2 size={16} /> {resettingFinance ? 'Leert …' : 'Finanzdaten löschen'}
+              </DangerButton>
+            </div>
+          </div>
         </Panel>
         <Panel className="border-status-danger/35 lg:col-span-2">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">

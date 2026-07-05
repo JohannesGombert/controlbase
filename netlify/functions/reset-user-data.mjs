@@ -1,13 +1,17 @@
 import { adminClient, json, requireUser } from './whoop-utils.mjs'
 
-const tablesInDeleteOrder = [
-  'nutrition_shopping_items',
-  'nutrition_meals',
-  'nutrition_week_plans',
+const financeTablesInDeleteOrder = [
   'finance_transactions',
   'finance_budgets',
   'finance_accounts',
   'finance_categories',
+]
+
+const tablesInDeleteOrder = [
+  'nutrition_shopping_items',
+  'nutrition_meals',
+  'nutrition_week_plans',
+  ...financeTablesInDeleteOrder,
   'health_weight_entries',
   'health_profiles',
   'daily_top3',
@@ -33,13 +37,16 @@ export async function handler(event) {
   try {
     const { user } = await requireUser(event)
     const body = JSON.parse(event.body ?? '{}')
-    if (body.confirm !== 'RESET') return json(400, { error: 'Bestaetigung fehlt.' })
+    const scope = body.scope === 'finance' ? 'finance' : 'all'
+    const expectedConfirm = scope === 'finance' ? 'FINANZEN' : 'RESET'
+    if (body.confirm !== expectedConfirm) return json(400, { error: 'Bestaetigung fehlt.' })
 
     const supabase = await adminClient()
     const deletedTables = []
     const skippedTables = []
+    const tables = scope === 'finance' ? financeTablesInDeleteOrder : tablesInDeleteOrder
 
-    for (const table of tablesInDeleteOrder) {
+    for (const table of tables) {
       const { error } = await supabase.from(table).delete().eq('user_id', user.id)
       if (error) {
         if (canIgnoreMissingTable(error)) {
@@ -51,7 +58,7 @@ export async function handler(event) {
       deletedTables.push(table)
     }
 
-    return json(200, { deletedTables, skippedTables })
+    return json(200, { deletedTables, scope, skippedTables })
   } catch (error) {
     return json(500, { error: error.message ?? 'Reset fehlgeschlagen.' })
   }

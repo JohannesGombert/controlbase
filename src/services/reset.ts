@@ -12,13 +12,21 @@ async function authHeaders() {
   return { authorization: `Bearer ${token}` }
 }
 
-export async function resetAllUserData() {
+async function resetUserData(scope: 'all' | 'finance', confirm: string) {
   const response = await fetch('/.netlify/functions/reset-user-data', {
-    body: JSON.stringify({ confirm: 'RESET' }),
+    body: JSON.stringify({ confirm, scope }),
     headers: { ...(await authHeaders()), 'content-type': 'application/json' },
     method: 'POST',
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok) throw new Error(data.error ?? 'Reset fehlgeschlagen.')
-  return data as { deletedTables: string[]; skippedTables: string[] }
+  return data as { deletedTables: string[]; scope: 'all' | 'finance'; skippedTables: string[] }
+}
+
+export async function resetAllUserData() {
+  return resetUserData('all', 'RESET')
+}
+
+export async function resetFinanceData() {
+  return resetUserData('finance', 'FINANZEN')
 }
