@@ -127,9 +127,12 @@ export async function pagedWhoopFetch(path, accessToken, params = {}) {
 export async function getFreshConnection(supabase, userId) {
   const { data: connection, error } = await supabase.from('whoop_connections').select('*').eq('user_id', userId).maybeSingle()
   if (error) throw error
-  if (!connection?.refresh_token) throw new Error('WHOOP ist noch nicht verbunden.')
+  if (!connection?.access_token) throw new Error('WHOOP ist noch nicht verbunden.')
   const expiresAt = connection.expires_at ? new Date(connection.expires_at).getTime() : 0
   if (expiresAt > Date.now() + 5 * 60 * 1000) return connection
+  if (!connection.refresh_token) {
+    throw new Error('WHOOP Token ist abgelaufen. Bitte WHOOP in den Einstellungen neu verbinden.')
+  }
 
   const refreshed = await whoopTokenRequest({ grant_type: 'refresh_token', refresh_token: connection.refresh_token })
   const nextConnection = {
