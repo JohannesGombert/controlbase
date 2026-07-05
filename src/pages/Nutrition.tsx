@@ -133,7 +133,7 @@ export function Nutrition() {
                   {plan.meals
                     .filter((meal) => meal.meal_date === key)
                     .map((meal) => (
-                      <MealCard key={meal.id} meal={meal} />
+                      <MealCard key={meal.id} meal={meal} onChanged={refresh} />
                     ))}
                 </div>
               </Panel>

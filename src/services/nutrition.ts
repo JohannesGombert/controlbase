@@ -11,6 +11,10 @@ export type Meal = {
   protein: number
   ingredients: string[]
   notes: string | null
+  eaten_at: string | null
+  photo_data_url: string | null
+  photo_calorie_estimate: number | null
+  photo_analysis_note: string | null
 }
 export type WeekPlan = { id: string; week_start: string; calorie_target: number; protein_target: number; meals: Meal[] }
 
@@ -211,4 +215,31 @@ export async function generateWeekPlan(userId: string, date: Date, profile: Heal
   }
   const { error: insertError } = await client().from('nutrition_meals').insert(rows)
   if (insertError) throw insertError
+}
+
+export async function setMealEaten(meal: Meal, eaten: boolean) {
+  const { error } = await client()
+    .from('nutrition_meals')
+    .update({
+      eaten_at: eaten ? new Date().toISOString() : null,
+      photo_calorie_estimate: eaten ? (meal.photo_calorie_estimate ?? meal.calories ?? null) : meal.photo_calorie_estimate,
+      photo_analysis_note: eaten
+        ? (meal.photo_analysis_note ?? 'Automatische Schaetzung aus der geplanten Portion.')
+        : meal.photo_analysis_note,
+    })
+    .eq('id', meal.id)
+  if (error) throw error
+}
+
+export async function saveMealPhotoEstimate(meal: Meal, photoDataUrl: string) {
+  const { error } = await client()
+    .from('nutrition_meals')
+    .update({
+      eaten_at: meal.eaten_at ?? new Date().toISOString(),
+      photo_data_url: photoDataUrl,
+      photo_calorie_estimate: meal.calories ?? null,
+      photo_analysis_note: 'Foto gespeichert. Kalorien automatisch aus der geplanten Portion uebernommen; echte Bildanalyse kann als naechster Schritt angebunden werden.',
+    })
+    .eq('id', meal.id)
+  if (error) throw error
 }
