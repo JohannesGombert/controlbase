@@ -31,7 +31,7 @@ export function WeeklyReview() {
       ['Alkoholtage', String(checkins.filter((item) => item.alcohol === true).length)],
       ['Ø Zigaretten', cigarettes.length ? (cigarettes.reduce((sum, value) => sum + value, 0) / cigarettes.length).toFixed(1) : '–'],
       ['Sauberes Essen', `${checkins.filter((item) => item.food_quality === 'sauber').length} Tage`],
-      ['Top 3', top3.length ? `${Math.round((completed / (top3.length * 3)) * 100)} %` : '0 %'],
+      ['Tagesergebnisse', top3.length ? `${Math.round((completed / (top3.length * 3)) * 100)} %` : '0 %'],
       ['Check-ins', String(checkins.length)],
     ]
   }, [checkins, top3])

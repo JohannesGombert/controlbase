@@ -1,4 +1,4 @@
-import { CheckCircle2, Moon, Save, Sun, Target } from 'lucide-react'
+import { Moon, Save, Sun, Target } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
@@ -7,7 +7,7 @@ import { loadToday, saveToday, type TodayForm } from '../services/data'
 
 const inputClass = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none transition placeholder:text-muted/60 focus:border-accent focus:bg-white focus:ring-2 focus:ring-accent/10'
 const labelClass = 'text-xs font-bold uppercase tracking-wider text-muted'
-const emptyForm: TodayForm = { weight: '', sleepQuality: '', businessTask: '', healthTask: '', privateTask: '', businessDone: false, healthDone: false, privateDone: false, steps: '', trainingType: 'nein', alcohol: false, cigarettes: '', firstCigaretteTime: '', foodQuality: '', notes: '' }
+const emptyForm: TodayForm = { weight: '', sleepQuality: '', businessTask: '', healthTask: '', privateTask: '', steps: '', trainingType: 'nein', alcohol: false, cigarettes: '', firstCigaretteTime: '', foodQuality: '', notes: '' }
 
 export function Today() {
   const { user } = useAuth()
@@ -56,14 +56,15 @@ export function Today() {
         </Panel>
 
         <Panel>
-          <div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-soft text-blue"><Target size={20} /></span><SectionTitle title="Top 3" description="Je ein Ergebnis. Konkret genug, um es abzuhaken." /></div>
+          <div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-blue-soft text-blue"><Target size={20} /></span><SectionTitle title="Was hast du heute gemacht?" description="Halte je Lebensbereich ein konkretes Ergebnis fest, das heute tatsächlich passiert ist." /></div>
+          <p className="mb-5 rounded-xl bg-blue-soft px-4 py-3 text-sm leading-6 text-blue"><strong>Keine To-do-Liste:</strong> Schreibe kurz auf, was du heute abgeschlossen, erreicht oder bewusst für dich getan hast.</p>
           <div className="space-y-4">
             {([
-              ['Beruf', 'businessTask', 'businessDone'],
-              ['Gesundheit', 'healthTask', 'healthDone'],
-              ['Privat & Finanzen', 'privateTask', 'privateDone'],
-            ] as const).map(([category, taskKey, doneKey]) => (
-              <div className="block" key={category}><span className={labelClass}>{category}</span><div className="mt-2 flex gap-2"><input aria-label={`${category} Aufgabe`} className="min-w-0 flex-1 rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white" onChange={(event) => update(taskKey, event.target.value)} placeholder="Was ist heute das eine Ergebnis?" value={form[taskKey]} /><label className="grid size-11 shrink-0 cursor-pointer place-items-center rounded-xl border border-line bg-white"><input checked={form[doneKey]} className="peer sr-only" onChange={(event) => update(doneKey, event.target.checked)} type="checkbox" /><CheckCircle2 className="text-muted peer-checked:text-positive" size={20} /><span className="sr-only">Erledigt</span></label></div></div>
+              ['Beruf', 'businessTask', 'Was hast du beruflich abgeschlossen oder vorangebracht?'],
+              ['Gesundheit', 'healthTask', 'Was hast du heute für deine Gesundheit getan?'],
+              ['Privat & Finanzen', 'privateTask', 'Was hast du privat oder finanziell erledigt?'],
+            ] as const).map(([category, taskKey, placeholder]) => (
+              <label className="block" key={category}><span className={labelClass}>{category}</span><input aria-label={`${category} Ergebnis`} className="mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-white" onChange={(event) => update(taskKey, event.target.value)} placeholder={placeholder} value={form[taskKey]} /></label>
             ))}
           </div>
         </Panel>

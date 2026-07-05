@@ -7,9 +7,6 @@ export type TodayForm = {
   businessTask: string
   healthTask: string
   privateTask: string
-  businessDone: boolean
-  healthDone: boolean
-  privateDone: boolean
   steps: string
   trainingType: string
   alcohol: boolean
@@ -87,9 +84,6 @@ export async function loadToday(userId: string): Promise<TodayForm> {
     businessTask: top3?.business_task ?? '',
     healthTask: top3?.health_task ?? '',
     privateTask: top3?.private_task ?? '',
-    businessDone: top3?.business_done ?? false,
-    healthDone: top3?.health_done ?? false,
-    privateDone: top3?.private_done ?? false,
     steps: checkin?.steps?.toString() ?? '',
     trainingType: checkin?.training_type ?? 'nein',
     alcohol: checkin?.alcohol ?? false,
@@ -102,7 +96,7 @@ export async function loadToday(userId: string): Promise<TodayForm> {
 
 export async function saveToday(userId: string, form: TodayForm) {
   const date = localDateKey()
-  const top3Done = [form.businessDone, form.healthDone, form.privateDone].filter(Boolean).length
+  const completedTasks = [form.businessTask, form.healthTask, form.privateTask].filter((task) => task.trim()).length
   const [{ error: checkinError }, { error: top3Error }] = await Promise.all([
     client().from('daily_checkins').upsert({
       user_id: userId,
@@ -115,7 +109,7 @@ export async function saveToday(userId: string, form: TodayForm) {
       cigarettes: nullableNumber(form.cigarettes),
       first_cigarette_time: form.firstCigaretteTime || null,
       food_quality: form.foodQuality || null,
-      top3_status: top3Done === 3 ? 'ja' : top3Done > 0 ? 'teilweise' : 'nein',
+      top3_status: completedTasks === 3 ? 'ja' : completedTasks > 0 ? 'teilweise' : 'nein',
       notes: form.notes || null,
     }, { onConflict: 'user_id,date' }),
     client().from('daily_top3').upsert({
@@ -124,9 +118,9 @@ export async function saveToday(userId: string, form: TodayForm) {
       business_task: form.businessTask || null,
       health_task: form.healthTask || null,
       private_task: form.privateTask || null,
-      business_done: form.businessDone,
-      health_done: form.healthDone,
-      private_done: form.privateDone,
+      business_done: Boolean(form.businessTask.trim()),
+      health_done: Boolean(form.healthTask.trim()),
+      private_done: Boolean(form.privateTask.trim()),
     }, { onConflict: 'user_id,date' }),
   ])
   if (checkinError) throw checkinError

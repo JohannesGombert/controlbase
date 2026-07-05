@@ -7,7 +7,7 @@ const metrics = [
   { label: 'Gewichtstrend', value: '–', note: 'Noch keine Daten', icon: Scale },
   { label: 'Training', value: '0', note: 'diese Woche', icon: Footprints },
   { label: 'Alkoholtage', value: '0', note: 'diese Woche', icon: GlassWater },
-  { label: 'Top 3', value: '0/3', note: 'heute erledigt', icon: Target },
+  { label: 'Tagesergebnisse', value: '0/3', note: 'Bereiche dokumentiert', icon: Target },
 ]
 
 export function Dashboard() {
@@ -40,17 +40,17 @@ export function Dashboard() {
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Tagesfokus</p>
               <span className="text-xs font-semibold text-muted">0 von 3</span>
             </div>
-            <h2 className="mt-4 font-display text-2xl font-semibold">Deine Top 3</h2>
+            <h2 className="mt-4 font-display text-2xl font-semibold">Heute festgehalten</h2>
             <div className="mt-5 space-y-3">
               {['Beruf', 'Gesundheit', 'Privat & Finanzen'].map((item, index) => (
                 <div className="flex items-center gap-3 rounded-xl bg-soft px-4 py-3" key={item}>
                   <span className="grid size-7 place-items-center rounded-full border border-line bg-white text-xs font-bold text-muted">{index + 1}</span>
-                  <span className="text-sm font-semibold text-muted">{item} festlegen</span>
+                  <span className="text-sm font-semibold text-muted">{item}: noch nichts eingetragen</span>
                 </div>
               ))}
             </div>
           </div>
-          <Link className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-accent" to="/heute">Top 3 eintragen <ArrowRight size={15} /></Link>
+          <Link className="mt-5 inline-flex items-center gap-1 text-sm font-bold text-accent" to="/heute">Ergebnisse dokumentieren <ArrowRight size={15} /></Link>
         </Panel>
       </div>
 
