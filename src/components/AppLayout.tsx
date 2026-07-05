@@ -1,6 +1,5 @@
 import {
   CalendarCheck,
-  Crown,
   Gauge,
   HeartPulse,
   Lightbulb,
@@ -24,7 +23,6 @@ const navigation = [
   { label: 'Finanzen', path: '/finanzen', icon: WalletCards },
   { label: 'Käufe', path: '/kaeufe', icon: ShoppingBag },
   { label: 'Ideen', path: '/ideen', icon: Lightbulb },
-  { label: 'CEO', path: '/ceo', icon: Crown },
   { label: 'Review', path: '/wochenreview', icon: CalendarCheck },
 ]
 

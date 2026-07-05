@@ -2,7 +2,6 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../auth/AuthProvider'
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { AppLayout } from '../components/AppLayout'
-import { Ceo } from '../pages/Ceo'
 import { Dashboard } from '../pages/Dashboard'
 import { Finance } from '../pages/Finance'
 import { Health } from '../pages/Health'
@@ -32,7 +31,6 @@ export default function App() {
         <Route path="finanzen" element={<Finance />} />
         <Route path="kaeufe" element={<Purchases />} />
         <Route path="ideen" element={<Ideas />} />
-        <Route path="ceo" element={<Ceo />} />
         <Route path="wochenreview" element={<WeeklyReview />} />
         <Route path="einstellungen" element={<Settings />} />
       </Route>
