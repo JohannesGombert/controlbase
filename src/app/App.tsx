@@ -3,6 +3,7 @@ import { AuthProvider } from '../auth/AuthProvider'
 import { ProtectedRoute } from '../auth/ProtectedRoute'
 import { AppLayout } from '../components/AppLayout'
 import { Dashboard } from '../pages/Dashboard'
+import { Finance } from '../pages/Finance'
 import { Ideas } from '../pages/Ideas'
 import { Login } from '../pages/Login'
 import { Purchases } from '../pages/Purchases'
@@ -19,6 +20,7 @@ export default function App() {
         <Route index element={<Navigate replace to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="heute" element={<Today />} />
+        <Route path="finanzen" element={<Finance />} />
         <Route path="kaeufe" element={<Purchases />} />
         <Route path="ideen" element={<Ideas />} />
         <Route path="wochenreview" element={<WeeklyReview />} />
