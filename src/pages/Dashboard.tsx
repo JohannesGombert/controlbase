@@ -1,17 +1,60 @@
 import { ArrowRight, Check, Footprints, GlassWater, Scale, ShoppingBag, Target, TimerReset } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
 import { Panel } from '../components/Panel'
+import { loadToday, type TodayForm } from '../services/data'
 
-const metrics = [
-  { label: 'Gewichtstrend', value: '–', note: 'Noch keine Daten', icon: Scale },
-  { label: 'Training', value: '0', note: 'diese Woche', icon: Footprints },
-  { label: 'Alkoholtage', value: '0', note: 'diese Woche', icon: GlassWater },
-  { label: 'Tagesergebnisse', value: '0/3', note: 'Bereiche dokumentiert', icon: Target },
-]
+const emptyToday: TodayForm = {
+  weight: '',
+  sleepQuality: '',
+  businessTask: '',
+  healthTask: '',
+  privateTask: '',
+  steps: '',
+  trainingType: 'nein',
+  alcohol: false,
+  cigarettes: '',
+  firstCigaretteTime: '',
+  foodQuality: '',
+  notes: '',
+}
+
+const focusItems = [
+  { label: 'Beruf', key: 'businessTask' },
+  { label: 'Gesundheit', key: 'healthTask' },
+  { label: 'Privat & Finanzen', key: 'privateTask' },
+] as const
 
 export function Dashboard() {
+  const { user } = useAuth()
+  const [todayData, setTodayData] = useState<TodayForm>(emptyToday)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const today = new Intl.DateTimeFormat('de-CH', { weekday: 'long', day: '2-digit', month: 'long' }).format(new Date())
+  const completedFocusCount = focusItems.filter((item) => todayData[item.key].trim()).length
+  const hasCheckIn = completedFocusCount > 0 || Boolean(todayData.weight || todayData.sleepQuality || todayData.steps || todayData.notes)
+  const metrics = useMemo(() => [
+    { label: 'Gewicht', value: todayData.weight ? `${todayData.weight} kg` : '–', note: todayData.weight ? 'heute erfasst' : 'Noch keine Daten', icon: Scale },
+    { label: 'Training', value: todayData.trainingType && todayData.trainingType !== 'nein' ? '1' : '0', note: todayData.trainingType && todayData.trainingType !== 'nein' ? todayData.trainingType : 'heute', icon: Footprints },
+    { label: 'Alkohol', value: todayData.alcohol ? 'Ja' : 'Nein', note: 'heute', icon: GlassWater },
+    { label: 'Tagesergebnisse', value: `${completedFocusCount}/3`, note: 'Bereiche dokumentiert', icon: Target },
+  ], [completedFocusCount, todayData])
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    void loadToday(user.id)
+      .then(setTodayData)
+      .catch(() => setError('Heutige Daten konnten nicht geladen werden.'))
+      .finally(() => setLoading(false))
+  }, [user])
 
   return (
     <>
@@ -23,13 +66,15 @@ export function Dashboard() {
           <div className="relative flex min-h-64 flex-col justify-between">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full bg-warning/15 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-warning-light">
-                <span className="size-2 rounded-full bg-warning-light" /> Noch offen
+                <span className="size-2 rounded-full bg-warning-light" /> {hasCheckIn ? 'Im Plan sichtbar' : 'Noch offen'}
               </span>
-              <h2 className="mt-6 max-w-lg font-display text-3xl font-semibold leading-tight sm:text-4xl">Du bist heute noch nicht sichtbar im Plan.</h2>
-              <p className="mt-3 max-w-lg text-sm leading-6 text-white/60">Der erste Check-in dauert weniger als zwei Minuten. Eintragen statt diskutieren.</p>
+              <h2 className="mt-6 max-w-lg font-display text-3xl font-semibold leading-tight sm:text-4xl">{hasCheckIn ? 'Dein Tag ist dokumentiert.' : 'Du bist heute noch nicht sichtbar im Plan.'}</h2>
+              <p className="mt-3 max-w-lg text-sm leading-6 text-white/60">
+                {hasCheckIn ? `${completedFocusCount} von 3 Tagesergebnissen sind festgehalten.` : 'Der erste Check-in dauert weniger als zwei Minuten. Eintragen statt diskutieren.'}
+              </p>
             </div>
             <Link className="mt-8 inline-flex w-fit items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-bold text-ink transition hover:-translate-y-0.5" to="/heute">
-              Check-in starten <ArrowRight size={17} />
+              {hasCheckIn ? 'Check-in bearbeiten' : 'Check-in starten'} <ArrowRight size={17} />
             </Link>
           </div>
         </Panel>
@@ -38,14 +83,17 @@ export function Dashboard() {
           <div>
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-muted">Tagesfokus</p>
-              <span className="text-xs font-semibold text-muted">0 von 3</span>
+              <span className="text-xs font-semibold text-muted">{completedFocusCount} von 3</span>
             </div>
             <h2 className="mt-4 font-display text-2xl font-semibold">Heute festgehalten</h2>
+            {error && <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</p>}
             <div className="mt-5 space-y-3">
-              {['Beruf', 'Gesundheit', 'Privat & Finanzen'].map((item, index) => (
-                <div className="flex items-center gap-3 rounded-xl bg-soft px-4 py-3" key={item}>
-                  <span className="grid size-7 place-items-center rounded-full border border-line bg-white text-xs font-bold text-muted">{index + 1}</span>
-                  <span className="text-sm font-semibold text-muted">{item}: noch nichts eingetragen</span>
+              {focusItems.map((item, index) => (
+                <div className="flex items-center gap-3 rounded-xl bg-soft px-4 py-3" key={item.key}>
+                  <span className="grid size-7 shrink-0 place-items-center rounded-full border border-line bg-white text-xs font-bold text-muted">{index + 1}</span>
+                  <span className={`text-sm font-semibold ${todayData[item.key].trim() ? 'text-ink' : 'text-muted'}`}>
+                    {item.label}: {loading ? 'wird geladen …' : todayData[item.key].trim() || 'noch nichts eingetragen'}
+                  </span>
                 </div>
               ))}
             </div>
