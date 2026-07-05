@@ -14,11 +14,14 @@ export type FinanceTransaction = {
   id: string
   account_id: string | null
   transaction_date: string
-  transaction_type: 'income' | 'expense'
+  transaction_type: 'income' | 'expense' | 'transfer'
   amount: number
   category: string
   description: string
   notes: string | null
+  import_hash?: string | null
+  source?: string | null
+  original_description?: string | null
 }
 
 export type FinanceBudget = {
@@ -63,6 +66,40 @@ export async function updateAccountBalance(id: string, balance: number) {
 
 export async function createTransaction(userId: string, input: { accountId: string; date: string; type: 'income' | 'expense'; amount: number; category: string; description: string; notes: string }) {
   const { error } = await client().from('finance_transactions').insert({ user_id: userId, account_id: input.accountId || null, transaction_date: input.date, transaction_type: input.type, amount: input.amount, category: input.category, description: input.description, notes: input.notes || null })
+  if (error) throw error
+}
+
+export async function importTransactions(
+  userId: string,
+  rows: {
+    accountId: string
+    date: string
+    type: 'income' | 'expense' | 'transfer'
+    amount: number
+    category: string
+    description: string
+    originalDescription: string
+    source: string
+    importHash: string
+  }[],
+) {
+  if (!rows.length) return
+  const payload = rows.map((row) => ({
+    user_id: userId,
+    account_id: row.accountId || null,
+    transaction_date: row.date,
+    transaction_type: row.type,
+    amount: row.amount,
+    category: row.category,
+    description: row.description,
+    notes: null,
+    original_description: row.originalDescription,
+    source: row.source,
+    import_hash: row.importHash,
+  }))
+  const { error } = await client()
+    .from('finance_transactions')
+    .upsert(payload, { onConflict: 'user_id,import_hash', ignoreDuplicates: true })
   if (error) throw error
 }
 
