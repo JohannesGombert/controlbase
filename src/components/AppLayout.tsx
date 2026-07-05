@@ -2,6 +2,7 @@ import {
   CalendarCheck,
   Gauge,
   Lightbulb,
+  LogOut,
   Menu,
   Settings,
   ShoppingBag,
@@ -10,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../auth/AuthProvider'
 
 const navigation = [
   { label: 'Cockpit', path: '/dashboard', icon: Gauge },
@@ -35,6 +37,7 @@ function Brand() {
 
 export function AppLayout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { user, signOut } = useAuth()
 
   return (
     <div className="min-h-dvh bg-canvas text-ink">
@@ -73,6 +76,10 @@ export function AppLayout() {
             <Settings size={18} />
             Einstellungen
           </NavLink>
+          <button className="mt-1 flex w-full items-center gap-3 rounded-xl px-3.5 py-3 text-left text-sm font-semibold text-muted hover:bg-white/80 hover:text-ink" onClick={() => void signOut()} type="button">
+            <LogOut size={18} /> Abmelden
+          </button>
+          <p className="mt-3 truncate px-3.5 text-[11px] text-muted">{user?.email}</p>
           <p className="mt-5 px-3.5 text-xs leading-relaxed text-muted">Heute zählt Wiederholung,<br />nicht Perfektion.</p>
         </div>
       </aside>
@@ -89,6 +96,7 @@ export function AppLayout() {
               <Icon size={18} /> {label}
             </NavLink>
           ))}
+          <button className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-muted" onClick={() => void signOut()} type="button"><LogOut size={18} /> Abmelden</button>
         </nav>
       )}
 

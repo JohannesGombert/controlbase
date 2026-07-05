@@ -8,6 +8,22 @@ alter table public.idea_parking enable row level security;
 alter table public.weekly_reviews enable row level security;
 alter table public.ceo_blocks enable row level security;
 
+-- The project uses opt-in Data API grants. Anonymous visitors get no table
+-- access; authenticated users receive only the CRUD privileges guarded by RLS.
+revoke all on table public.daily_checkins from anon;
+revoke all on table public.daily_top3 from anon;
+revoke all on table public.purchase_waitlist from anon;
+revoke all on table public.idea_parking from anon;
+revoke all on table public.weekly_reviews from anon;
+revoke all on table public.ceo_blocks from anon;
+
+grant select, insert, update, delete on table public.daily_checkins to authenticated;
+grant select, insert, update, delete on table public.daily_top3 to authenticated;
+grant select, insert, update, delete on table public.purchase_waitlist to authenticated;
+grant select, insert, update, delete on table public.idea_parking to authenticated;
+grant select, insert, update, delete on table public.weekly_reviews to authenticated;
+grant select, insert, update, delete on table public.ceo_blocks to authenticated;
+
 -- daily_checkins
 create policy "daily_checkins_select_own"
 on public.daily_checkins for select
