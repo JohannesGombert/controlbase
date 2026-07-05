@@ -2,6 +2,7 @@ import {
   CalendarCheck,
   Gauge,
   Lightbulb,
+  HeartPulse,
   LogOut,
   Menu,
   Settings,
@@ -17,11 +18,14 @@ import { useAuth } from '../auth/AuthProvider'
 const navigation = [
   { label: 'Cockpit', path: '/dashboard', icon: Gauge },
   { label: 'Heute', path: '/heute', icon: Target },
+  { label: 'Gesundheit', path: '/gesundheit', icon: HeartPulse },
   { label: 'Finanzen', path: '/finanzen', icon: WalletCards },
   { label: 'Käufe', path: '/kaeufe', icon: ShoppingBag },
   { label: 'Ideen', path: '/ideen', icon: Lightbulb },
   { label: 'Review', path: '/wochenreview', icon: CalendarCheck },
 ]
+
+const mobileNavigation = navigation.filter(({ path }) => ['/dashboard', '/heute', '/gesundheit', '/finanzen', '/wochenreview'].includes(path))
 
 function Brand() {
   return (
@@ -108,8 +112,8 @@ export function AppLayout() {
         </div>
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t border-line bg-white/95 px-1 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden" aria-label="Schnellnavigation">
-        {navigation.map(({ label, path, icon: Icon }) => (
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-white/95 px-1 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur lg:hidden" aria-label="Schnellnavigation">
+        {mobileNavigation.map(({ label, path, icon: Icon }) => (
           <NavLink className={({ isActive }) => `flex flex-col items-center gap-1 rounded-lg py-1.5 text-[10px] font-semibold ${isActive ? 'text-ink' : 'text-muted'}`} key={path} to={path}>
             {({ isActive }) => (
               <>

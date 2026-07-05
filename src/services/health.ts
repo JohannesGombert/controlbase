@@ -1,0 +1,35 @@
+import { supabase } from '../lib/supabaseClient'
+
+export type HealthProfile = {
+  currentWeight: string
+  targetWeight: string
+  heightCm: string
+  birthDate: string
+  sex: string
+  weeklyWeightLoss: string
+  activityLevel: string
+  dietStyle: string
+  mealsPerDay: string
+  allergies: string
+  dislikes: string
+  notes: string
+}
+
+export const emptyHealthProfile: HealthProfile = { currentWeight: '', targetWeight: '', heightCm: '', birthDate: '', sex: 'unspecified', weeklyWeightLoss: '0.5', activityLevel: 'moderate', dietStyle: 'balanced', mealsPerDay: '3', allergies: '', dislikes: '', notes: '' }
+
+function client() {
+  if (!supabase) throw new Error('Supabase ist nicht konfiguriert.')
+  return supabase
+}
+
+export async function loadHealthProfile(userId: string): Promise<HealthProfile> {
+  const { data, error } = await client().from('health_profiles').select('*').eq('user_id', userId).maybeSingle()
+  if (error) throw error
+  if (!data) return emptyHealthProfile
+  return { currentWeight: data.current_weight?.toString() ?? '', targetWeight: data.target_weight?.toString() ?? '', heightCm: data.height_cm?.toString() ?? '', birthDate: data.birth_date ?? '', sex: data.sex ?? 'unspecified', weeklyWeightLoss: data.weekly_weight_loss?.toString() ?? '0.5', activityLevel: data.activity_level ?? 'moderate', dietStyle: data.diet_style ?? 'balanced', mealsPerDay: data.meals_per_day?.toString() ?? '3', allergies: data.allergies ?? '', dislikes: data.dislikes ?? '', notes: data.notes ?? '' }
+}
+
+export async function saveHealthProfile(userId: string, profile: HealthProfile) {
+  const { error } = await client().from('health_profiles').upsert({ user_id: userId, current_weight: Number(profile.currentWeight), target_weight: Number(profile.targetWeight), height_cm: Number(profile.heightCm), birth_date: profile.birthDate || null, sex: profile.sex, weekly_weight_loss: Number(profile.weeklyWeightLoss), activity_level: profile.activityLevel, diet_style: profile.dietStyle, meals_per_day: Number(profile.mealsPerDay), allergies: profile.allergies || null, dislikes: profile.dislikes || null, notes: profile.notes || null }, { onConflict: 'user_id' })
+  if (error) throw error
+}
