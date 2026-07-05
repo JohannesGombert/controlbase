@@ -17,6 +17,8 @@ export type HealthProfile = {
 
 export const emptyHealthProfile: HealthProfile = { currentWeight: '', targetWeight: '', heightCm: '', birthDate: '', sex: 'unspecified', weeklyWeightLoss: '0.5', activityLevel: 'moderate', dietStyle: 'balanced', mealsPerDay: '3', allergies: '', dislikes: '', notes: '' }
 
+export type WeightEntry = { id: string; measured_on: string; weight: number; notes: string | null }
+
 function client() {
   if (!supabase) throw new Error('Supabase ist nicht konfiguriert.')
   return supabase
@@ -31,5 +33,16 @@ export async function loadHealthProfile(userId: string): Promise<HealthProfile> 
 
 export async function saveHealthProfile(userId: string, profile: HealthProfile) {
   const { error } = await client().from('health_profiles').upsert({ user_id: userId, current_weight: Number(profile.currentWeight), target_weight: Number(profile.targetWeight), height_cm: Number(profile.heightCm), birth_date: profile.birthDate || null, sex: profile.sex, weekly_weight_loss: Number(profile.weeklyWeightLoss), activity_level: profile.activityLevel, diet_style: profile.dietStyle, meals_per_day: Number(profile.mealsPerDay), allergies: profile.allergies || null, dislikes: profile.dislikes || null, notes: profile.notes || null }, { onConflict: 'user_id' })
+  if (error) throw error
+}
+
+export async function loadWeightEntries(userId: string): Promise<WeightEntry[]> {
+  const { data, error } = await client().from('health_weight_entries').select('*').eq('user_id', userId).order('measured_on', { ascending: true }).limit(90)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function saveWeightEntry(userId: string, measuredOn: string, weight: number) {
+  const { error } = await client().from('health_weight_entries').upsert({ user_id: userId, measured_on: measuredOn, weight }, { onConflict: 'user_id,measured_on' })
   if (error) throw error
 }
