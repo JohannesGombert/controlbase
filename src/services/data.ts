@@ -14,6 +14,17 @@ export type TodayForm = {
   firstCigaretteTime: string
   foodQuality: string
   notes: string
+  whoopWorkouts: TodayWhoopWorkout[]
+}
+
+export type TodayWhoopWorkout = {
+  id: string
+  start_time: string | null
+  end_time: string | null
+  training_type: string | null
+  strain: number | null
+  average_heart_rate: number | null
+  max_heart_rate: number | null
 }
 
 export type Purchase = {
@@ -71,12 +82,23 @@ export function currentWeekBounds(date = new Date()) {
 
 export async function loadToday(userId: string): Promise<TodayForm> {
   const date = localDateKey()
-  const [{ data: checkin, error: checkinError }, { data: top3, error: top3Error }] = await Promise.all([
+  const nextDay = format(new Date(new Date(`${date}T12:00:00`).getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
+  const [{ data: checkin, error: checkinError }, { data: top3, error: top3Error }, { data: workouts, error: workoutError }] = await Promise.all([
     client().from('daily_checkins').select('*').eq('user_id', userId).eq('date', date).maybeSingle(),
     client().from('daily_top3').select('*').eq('user_id', userId).eq('date', date).maybeSingle(),
+    client()
+      .from('whoop_workouts')
+      .select('id,start_time,end_time,training_type,strain,average_heart_rate,max_heart_rate')
+      .eq('user_id', userId)
+      .gte('start_time', new Date(`${date}T00:00:00`).toISOString())
+      .lt('start_time', new Date(`${nextDay}T00:00:00`).toISOString())
+      .order('start_time', { ascending: true }),
   ])
   if (checkinError) throw checkinError
   if (top3Error) throw top3Error
+  const whoopWorkouts = workoutError ? [] : (workouts ?? []) as TodayWhoopWorkout[]
+  const mappedTrainingTypes = Array.from(new Set(whoopWorkouts.map((workout) => workout.training_type).filter((value): value is string => Boolean(value))))
+  const automaticTrainingType = mappedTrainingTypes.length > 1 ? 'mehrere' : mappedTrainingTypes[0]
 
   return {
     weight: checkin?.weight?.toString() ?? '',
@@ -85,12 +107,13 @@ export async function loadToday(userId: string): Promise<TodayForm> {
     healthTask: top3?.health_task ?? '',
     privateTask: top3?.private_task ?? '',
     steps: checkin?.steps?.toString() ?? '',
-    trainingType: checkin?.training_type ?? 'nein',
+    trainingType: checkin?.training_type && checkin.training_type !== 'nein' ? checkin.training_type : automaticTrainingType ?? 'nein',
     alcohol: checkin?.alcohol ?? false,
     cigarettes: checkin?.cigarettes?.toString() ?? '',
     firstCigaretteTime: checkin?.first_cigarette_time?.slice(0, 5) ?? '',
     foodQuality: checkin?.food_quality ?? '',
     notes: checkin?.notes ?? '',
+    whoopWorkouts,
   }
 }
 

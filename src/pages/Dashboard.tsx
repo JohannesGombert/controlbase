@@ -20,6 +20,7 @@ const emptyToday: TodayForm = {
   firstCigaretteTime: '',
   foodQuality: '',
   notes: '',
+  whoopWorkouts: [],
 }
 
 const focusItems = [

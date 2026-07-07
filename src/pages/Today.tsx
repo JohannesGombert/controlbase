@@ -1,12 +1,34 @@
-import { Moon, Save, Sun, Target } from 'lucide-react'
+import { Dumbbell, Moon, Save, Sun, Target } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
 import { Panel, SectionTitle } from '../components/Panel'
 import { FormInput, PrimaryButton, SelectInput, Textarea, labelClass } from '../components/ui'
-import { loadToday, saveToday, type TodayForm } from '../services/data'
+import { loadToday, saveToday, type TodayForm, type TodayWhoopWorkout } from '../services/data'
 
-const emptyForm: TodayForm = { weight: '', sleepQuality: '', businessTask: '', healthTask: '', privateTask: '', steps: '', trainingType: 'nein', alcohol: false, cigarettes: '', firstCigaretteTime: '', foodQuality: '', notes: '' }
+const emptyForm: TodayForm = { weight: '', sleepQuality: '', businessTask: '', healthTask: '', privateTask: '', steps: '', trainingType: 'nein', alcohol: false, cigarettes: '', firstCigaretteTime: '', foodQuality: '', notes: '', whoopWorkouts: [] }
+
+const trainingLabels: Record<string, string> = {
+  cardio: 'Cardio',
+  tennis: 'Tennis',
+  krafttraining: 'Krafttraining',
+  laufen: 'Laufen',
+  velofahren: 'Velofahren',
+  wandern: 'Wandern',
+  fussball: 'Fussball',
+  yoga: 'Yoga / Mobility',
+  spaziergang: 'Spaziergang',
+  anderes: 'Anderes',
+  mehrere: 'Mehrere WHOOP-Sessions',
+  nein: 'Nein',
+}
+
+function workoutTime(workout: TodayWhoopWorkout) {
+  if (!workout.start_time) return 'WHOOP-Session'
+  const start = new Date(workout.start_time).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
+  const end = workout.end_time ? new Date(workout.end_time).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : ''
+  return end ? `${start} - ${end}` : start
+}
 
 export function Today() {
   const { user } = useAuth()
@@ -72,12 +94,31 @@ export function Today() {
           <div className="flex gap-4"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-status-ceo/10 text-status-ceo"><Moon size={20} /></span><SectionTitle title="Abendcheck" description="Fakten sammeln. Abweichungen erkennen." /></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label><span className={labelClass}>Schritte</span><FormInput inputMode="numeric" min="0" onChange={(event) => update('steps', event.target.value)} placeholder="0" type="number" value={form.steps} /></label>
-            <label><span className={labelClass}>Training</span><SelectInput onChange={(event) => update('trainingType', event.target.value)} value={form.trainingType}><option value="nein">Nein</option><option value="krafttraining">Krafttraining</option><option value="tennis">Tennis</option><option value="cardio">Cardio</option><option value="spaziergang">Spaziergang</option><option value="wandern">Wandern</option><option value="anderes">Anderes</option></SelectInput></label>
+            <label><span className={labelClass}>Training</span><SelectInput onChange={(event) => update('trainingType', event.target.value)} value={form.trainingType}><option value="nein">Nein</option><option value="mehrere">Mehrere WHOOP-Sessions</option><option value="krafttraining">Krafttraining</option><option value="tennis">Tennis</option><option value="cardio">Cardio</option><option value="laufen">Laufen</option><option value="velofahren">Velofahren</option><option value="spaziergang">Spaziergang</option><option value="wandern">Wandern</option><option value="yoga">Yoga / Mobility</option><option value="anderes">Anderes</option></SelectInput></label>
             <label><span className={labelClass}>Essen</span><SelectInput onChange={(event) => update('foodQuality', event.target.value)} value={form.foodQuality}><option value="">Auswählen</option><option value="sauber">Sauber</option><option value="mittel">Mittel</option><option value="schlecht">Schlecht</option></SelectInput></label>
             <label><span className={labelClass}>Alkohol</span><SelectInput onChange={(event) => update('alcohol', event.target.value === 'ja')} value={form.alcohol ? 'ja' : 'nein'}><option value="nein">Nein</option><option value="ja">Ja</option></SelectInput></label>
             <label><span className={labelClass}>Zigaretten</span><FormInput inputMode="numeric" min="0" onChange={(event) => update('cigarettes', event.target.value)} placeholder="0" type="number" value={form.cigarettes} /></label>
             <label><span className={labelClass}>Erste Zigarette</span><FormInput onChange={(event) => update('firstCigaretteTime', event.target.value)} type="time" value={form.firstCigaretteTime} /></label>
           </div>
+          {form.whoopWorkouts.length ? (
+            <div className="mt-4 rounded-2xl border border-status-primary/20 bg-status-primary/10 p-4">
+              <div className="flex items-center gap-2 text-sm font-bold text-ink"><Dumbbell size={16} /> Verknuepfte WHOOP-Sessions</div>
+              <div className="mt-3 grid gap-2 md:grid-cols-2">
+                {form.whoopWorkouts.map((workout) => (
+                  <div className="rounded-xl bg-control-surface px-3.5 py-3 text-sm" key={workout.id}>
+                    <div className="flex items-center justify-between gap-3">
+                      <strong>{workout.training_type ? trainingLabels[workout.training_type] ?? workout.training_type : 'Noch nicht gemappt'}</strong>
+                      <span className="text-xs text-muted">{workoutTime(workout)}</span>
+                    </div>
+                    <p className="mt-2 text-xs text-muted">
+                      Strain {workout.strain ? Number(workout.strain).toFixed(1) : '-'} · Ø HF {workout.average_heart_rate ?? '-'} · Max HF {workout.max_heart_rate ?? '-'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-3 text-xs text-muted">Aenderungen am Typ machst du unter Gesundheit bei den WHOOP-Workouts. Der Abendcheck uebernimmt die Zuordnung automatisch.</p>
+            </div>
+          ) : null}
           <label className="mt-4 block"><span className={labelClass}>Notiz</span><Textarea className="min-h-24" onChange={(event) => update('notes', event.target.value)} placeholder="Was sollte dein zukünftiges Ich über heute wissen?" value={form.notes} /></label>
         </Panel>
 
