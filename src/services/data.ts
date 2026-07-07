@@ -96,12 +96,13 @@ export async function loadToday(userId: string): Promise<TodayForm> {
 
 export async function saveToday(userId: string, form: TodayForm) {
   const date = localDateKey()
+  const weight = nullableNumber(form.weight)
   const completedTasks = [form.businessTask, form.healthTask, form.privateTask].filter((task) => task.trim()).length
-  const [{ error: checkinError }, { error: top3Error }] = await Promise.all([
+  const [{ error: checkinError }, { error: top3Error }, { error: weightError }] = await Promise.all([
     client().from('daily_checkins').upsert({
       user_id: userId,
       date,
-      weight: nullableNumber(form.weight),
+      weight,
       sleep_quality: form.sleepQuality || null,
       steps: nullableNumber(form.steps),
       training_type: form.trainingType || null,
@@ -122,9 +123,18 @@ export async function saveToday(userId: string, form: TodayForm) {
       health_done: Boolean(form.healthTask.trim()),
       private_done: Boolean(form.privateTask.trim()),
     }, { onConflict: 'user_id,date' }),
+    weight === null
+      ? Promise.resolve({ error: null })
+      : client().from('health_weight_entries').upsert({
+        user_id: userId,
+        measured_on: date,
+        weight,
+        notes: 'Automatisch aus dem Morgencheck übernommen.',
+      }, { onConflict: 'user_id,measured_on' }),
   ])
   if (checkinError) throw checkinError
   if (top3Error) throw top3Error
+  if (weightError) throw weightError
 }
 
 export async function listPurchases(userId: string): Promise<Purchase[]> {
