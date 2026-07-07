@@ -31,7 +31,10 @@ export type WhoopDailyMetric = {
 export type WhoopWorkout = {
   id: string
   start_time: string | null
+  end_time: string | null
   sport_id: number | null
+  training_type: string | null
+  training_note: string | null
   strain: number | null
   average_heart_rate: number | null
   max_heart_rate: number | null
@@ -79,13 +82,25 @@ export async function loadWhoopHealthData(userId: string) {
       .order('date', { ascending: true }),
     supabase
       .from('whoop_workouts')
-      .select('id,start_time,sport_id,strain,average_heart_rate,max_heart_rate,kilojoule')
+      .select('id,start_time,end_time,sport_id,training_type,training_note,strain,average_heart_rate,max_heart_rate,kilojoule')
       .eq('user_id', userId)
       .gte('start_time', `${from}T00:00:00.000Z`)
       .order('start_time', { ascending: false })
-      .limit(5),
+      .limit(20),
   ])
   if (dailyError) throw dailyError
   if (workoutError) throw workoutError
   return { daily: (daily ?? []) as WhoopDailyMetric[], workouts: (workouts ?? []) as WhoopWorkout[] }
+}
+
+export async function updateWhoopWorkoutTraining(workoutId: string, input: { trainingType: string; trainingNote?: string }) {
+  if (!supabase) throw new Error('Supabase ist nicht konfiguriert.')
+  const { error } = await supabase
+    .from('whoop_workouts')
+    .update({
+      training_type: input.trainingType || null,
+      training_note: input.trainingNote?.trim() || null,
+    })
+    .eq('id', workoutId)
+  if (error) throw error
 }

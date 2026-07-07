@@ -59,6 +59,8 @@ create table if not exists whoop_workouts (
   start_time timestamptz,
   end_time timestamptz,
   sport_id integer,
+  training_type text,
+  training_note text,
   strain numeric,
   average_heart_rate numeric,
   max_heart_rate numeric,
@@ -78,6 +80,9 @@ create table if not exists whoop_workouts (
   updated_at timestamptz default now(),
   unique(user_id, whoop_workout_id)
 );
+
+alter table whoop_workouts add column if not exists training_type text;
+alter table whoop_workouts add column if not exists training_note text;
 
 create table if not exists whoop_sync_log (
   id uuid primary key default gen_random_uuid(),
@@ -101,7 +106,7 @@ revoke all on table whoop_daily_metrics from anon;
 revoke all on table whoop_workouts from anon;
 revoke all on table whoop_sync_log from anon;
 grant select on table whoop_daily_metrics to authenticated;
-grant select on table whoop_workouts to authenticated;
+grant select, update on table whoop_workouts to authenticated;
 grant select on table whoop_sync_log to authenticated;
 
 -- Client may only see non-token connection status through a view.
@@ -128,6 +133,12 @@ drop policy if exists "Users can read own whoop workouts" on whoop_workouts;
 create policy "Users can read own whoop workouts"
   on whoop_workouts for select
   using (auth.uid() = user_id);
+
+drop policy if exists "Users can update own whoop workout classification" on whoop_workouts;
+create policy "Users can update own whoop workout classification"
+  on whoop_workouts for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 drop policy if exists "Users can read own whoop sync log" on whoop_sync_log;
 create policy "Users can read own whoop sync log"

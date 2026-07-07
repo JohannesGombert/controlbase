@@ -171,14 +171,22 @@ export async function setIdeaStatus(id: string, status: string) {
 
 export async function loadWeeklyReview(userId: string) {
   const { start, end } = currentWeekBounds()
-  const [{ data: review, error: reviewError }, { data: checkins, error: checkinsError }, { data: top3, error: top3Error }] = await Promise.all([
+  const [{ data: review, error: reviewError }, { data: checkins, error: checkinsError }, { data: top3, error: top3Error }, { data: whoopWorkouts, error: whoopError }] = await Promise.all([
     client().from('weekly_reviews').select('*').eq('user_id', userId).eq('week_start', start).maybeSingle(),
     client().from('daily_checkins').select('*').eq('user_id', userId).gte('date', start).lte('date', end),
     client().from('daily_top3').select('*').eq('user_id', userId).gte('date', start).lte('date', end),
+    client()
+      .from('whoop_workouts')
+      .select('id,start_time,end_time,training_type,strain,average_heart_rate,max_heart_rate')
+      .eq('user_id', userId)
+      .gte('start_time', `${start}T00:00:00.000Z`)
+      .lte('start_time', `${end}T23:59:59.999Z`)
+      .order('start_time', { ascending: true }),
   ])
   if (reviewError) throw reviewError
   if (checkinsError) throw checkinsError
   if (top3Error) throw top3Error
+  if (whoopError) throw whoopError
 
   return {
     form: {
@@ -191,6 +199,7 @@ export async function loadWeeklyReview(userId: string) {
     } satisfies ReviewForm,
     checkins: checkins ?? [],
     top3: top3 ?? [],
+    whoopWorkouts: whoopWorkouts ?? [],
   }
 }
 

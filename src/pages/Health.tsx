@@ -14,7 +14,7 @@ import {
   type HealthProfile,
   type WeightEntry,
 } from '../services/health'
-import { loadWhoopHealthData, type WhoopDailyMetric, type WhoopWorkout } from '../services/whoop'
+import { loadWhoopHealthData, updateWhoopWorkoutTraining, type WhoopDailyMetric, type WhoopWorkout } from '../services/whoop'
 
 const field = 'mt-2 w-full rounded-xl border border-line bg-soft px-3.5 py-3 text-sm outline-none focus:border-accent focus:bg-control-hover'
 const label = 'text-xs font-bold uppercase tracking-wider text-muted'
@@ -30,14 +30,51 @@ function minutesToHours(value: number | null | undefined) {
   return `${hours}h ${minutes}m`
 }
 
-function WhoopPanel({ daily, workouts }: { daily: WhoopDailyMetric[]; workouts: WhoopWorkout[] }) {
+const trainingOptions = [
+  ['cardio', 'Cardio'],
+  ['tennis', 'Tennis'],
+  ['krafttraining', 'Krafttraining'],
+  ['laufen', 'Laufen'],
+  ['velofahren', 'Velofahren'],
+  ['wandern', 'Wandern'],
+  ['fussball', 'Fussball'],
+  ['yoga', 'Yoga / Mobility'],
+  ['anderes', 'Anderes'],
+] as const
+
+function WhoopPanel({
+  daily,
+  workouts,
+  onWorkoutUpdated,
+}: {
+  daily: WhoopDailyMetric[]
+  workouts: WhoopWorkout[]
+  onWorkoutUpdated: (workout: WhoopWorkout) => void
+}) {
   const latest = daily.at(-1)
+  const [savingWorkoutId, setSavingWorkoutId] = useState<string | null>(null)
+  const [workoutError, setWorkoutError] = useState('')
   const chartData = daily.map((item) => ({
     date: item.date,
     recovery: item.recovery_score ?? null,
     sleep: item.sleep_performance_percentage ?? null,
     strain: item.day_strain ?? null,
   }))
+
+  const updateWorkoutType = async (workout: WhoopWorkout, trainingType: string) => {
+    setSavingWorkoutId(workout.id)
+    setWorkoutError('')
+    const updated = { ...workout, training_type: trainingType || null }
+    onWorkoutUpdated(updated)
+    try {
+      await updateWhoopWorkoutTraining(workout.id, { trainingType, trainingNote: workout.training_note ?? '' })
+    } catch {
+      onWorkoutUpdated(workout)
+      setWorkoutError('Trainingstyp konnte nicht gespeichert werden. Bitte whoop_schema.sql in Supabase erneut ausfuehren.')
+    } finally {
+      setSavingWorkoutId(null)
+    }
+  }
 
   return (
     <Panel>
@@ -103,12 +140,33 @@ function WhoopPanel({ daily, workouts }: { daily: WhoopDailyMetric[]; workouts: 
           </div>
 
           <div className="mt-5 rounded-xl border border-line bg-control-surface p-4">
-            <h3 className="font-display text-xl font-semibold">Letzte Workouts</h3>
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h3 className="font-display text-xl font-semibold">Letzte Workouts</h3>
+                <p className="text-sm text-muted">Jede WHOOP-Session kann einzeln als Training eingeordnet werden.</p>
+              </div>
+              <p className="text-xs font-bold uppercase tracking-wider text-muted">{workouts.length} Sessions</p>
+            </div>
             {workouts.length ? (
               <div className="mt-3 divide-y divide-line">
                 {workouts.map((workout) => (
-                  <div className="grid gap-2 py-3 text-sm sm:grid-cols-[1fr_0.5fr_0.5fr_0.5fr]" key={workout.id}>
-                    <span className="font-semibold">{workout.start_time ? new Date(workout.start_time).toLocaleString('de-CH') : 'Workout'}</span>
+                  <div className="grid gap-3 py-3 text-sm lg:grid-cols-[1.1fr_0.8fr_0.45fr_0.45fr_0.45fr]" key={workout.id}>
+                    <div>
+                      <p className="font-semibold">{workout.start_time ? new Date(workout.start_time).toLocaleString('de-CH') : 'Workout'}</p>
+                      {workout.end_time && <p className="mt-0.5 text-xs text-muted">bis {new Date(workout.end_time).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })}</p>}
+                    </div>
+                    <label>
+                      <span className="sr-only">Trainingstyp</span>
+                      <select
+                        className="w-full rounded-xl border border-line bg-soft px-3 py-2 text-sm outline-none focus:border-accent"
+                        disabled={savingWorkoutId === workout.id}
+                        onChange={(event) => void updateWorkoutType(workout, event.target.value)}
+                        value={workout.training_type ?? ''}
+                      >
+                        <option value="">Typ waehlen</option>
+                        {trainingOptions.map(([value, optionLabel]) => <option key={value} value={value}>{optionLabel}</option>)}
+                      </select>
+                    </label>
                     <span className="text-muted">Strain {metric(workout.strain)}</span>
                     <span className="text-muted">Ø HF {metric(workout.average_heart_rate)}</span>
                     <span className="text-muted">Max HF {metric(workout.max_heart_rate)}</span>
@@ -118,6 +176,7 @@ function WhoopPanel({ daily, workouts }: { daily: WhoopDailyMetric[]; workouts: 
             ) : (
               <p className="mt-3 text-sm text-muted">Noch keine Workouts synchronisiert.</p>
             )}
+            {workoutError && <p className="mt-3 rounded-xl bg-status-danger/10 p-3 text-sm font-semibold text-status-danger">{workoutError}</p>}
           </div>
         </>
       ) : (
@@ -225,7 +284,11 @@ export function Health() {
             <Panel><SectionTitle title="Gewichtstrend" description="Der 7-Tage-Durchschnitt glaettet normale taegliche Schwankungen." /><div className="mb-4 flex gap-2"><input aria-label="Heutiges Gewicht" className="min-w-0 flex-1 rounded-xl border border-line bg-soft px-3.5 py-3 text-sm" min="30" onChange={(event) => setNewWeight(event.target.value)} placeholder="Heutiges Gewicht in kg" step="0.1" type="number" value={newWeight} /><button className="inline-flex items-center gap-2 rounded-xl bg-control-deep px-4 text-sm font-bold text-white" onClick={() => void addWeight()} type="button"><Plus size={16} /> Eintragen</button></div>{entries.length ? <div className="h-56"><ResponsiveContainer height="100%" width="100%"><LineChart data={entries}><XAxis dataKey="measured_on" fontSize={11} tickFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })} /><YAxis domain={['dataMin - 1', 'dataMax + 1']} fontSize={11} width={42} /><Tooltip formatter={(value) => [`${Number(value).toFixed(1)} kg`, 'Gewicht']} labelFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH')} /><Line dataKey="weight" dot={{ r: 3 }} stroke="#00D4FF" strokeWidth={2} type="monotone" /></LineChart></ResponsiveContainer></div> : <p className="py-16 text-center text-sm text-muted">Trage dein erstes Gewicht ein.</p>}<p className="mt-3 text-sm font-semibold text-accent">7-Tage-Trend: {trend ? `${trend.toFixed(1)} kg` : 'noch nicht verfuegbar'}</p></Panel>
             <Panel className="bg-control-deep text-white"><p className="text-xs font-bold uppercase tracking-[0.18em] text-positive-light">Taeglicher Orientierungsrahmen</p>{targets ? <><p className="mt-6 font-display text-4xl font-semibold">{targets.calories} kcal</p><p className="mt-2 text-sm text-white/60">Erhaltung geschaetzt: {targets.maintenance} kcal</p><div className="mt-6 rounded-xl bg-control-hover p-4"><p className="text-xs text-white/55">Proteinziel</p><p className="mt-1 font-display text-2xl font-semibold">{targets.protein} g / Tag</p></div></> : <p className="mt-6 text-sm leading-6 text-white/65">Ergaenze Geburtsdatum, Groesse, Gewicht und Geschlecht, damit ein Rahmen berechnet werden kann.</p>}<p className="mt-6 text-xs leading-5 text-white/45">Schaetzung, keine medizinische Ernaehrungsempfehlung. Anpassungen erfolgen spaeter anhand des Wochentrends.</p></Panel>
           </div>
-          <WhoopPanel daily={whoopDaily} workouts={whoopWorkouts} />
+          <WhoopPanel
+            daily={whoopDaily}
+            onWorkoutUpdated={(updated) => setWhoopWorkouts((current) => current.map((workout) => workout.id === updated.id ? updated : workout))}
+            workouts={whoopWorkouts}
+          />
           <Panel><SectionTitle title="Koerper & Ziel" description="Diese Angaben bestimmen spaeter den sicheren Ausgangsrahmen." /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label><span className={label}>Aktuelles Gewicht (kg)</span><input className={field} min="30" onChange={(event) => update('currentWeight', event.target.value)} required step="0.1" type="number" value={form.currentWeight} /></label>
             <label><span className={label}>Zielgewicht (kg)</span><input className={field} min="30" onChange={(event) => update('targetWeight', event.target.value)} required step="0.1" type="number" value={form.targetWeight} /></label>
