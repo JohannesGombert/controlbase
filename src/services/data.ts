@@ -169,8 +169,8 @@ export async function setIdeaStatus(id: string, status: string) {
   if (error) throw error
 }
 
-export async function loadWeeklyReview(userId: string) {
-  const { start, end } = currentWeekBounds()
+export async function loadWeeklyReview(userId: string, weekDate = new Date()) {
+  const { start, end } = currentWeekBounds(weekDate)
   const [{ data: review, error: reviewError }, { data: checkins, error: checkinsError }, { data: top3, error: top3Error }, { data: whoopWorkouts, error: whoopError }] = await Promise.all([
     client().from('weekly_reviews').select('*').eq('user_id', userId).eq('week_start', start).maybeSingle(),
     client().from('daily_checkins').select('*').eq('user_id', userId).gte('date', start).lte('date', end),
@@ -186,7 +186,6 @@ export async function loadWeeklyReview(userId: string) {
   if (reviewError) throw reviewError
   if (checkinsError) throw checkinsError
   if (top3Error) throw top3Error
-  if (whoopError) throw whoopError
 
   return {
     form: {
@@ -199,12 +198,12 @@ export async function loadWeeklyReview(userId: string) {
     } satisfies ReviewForm,
     checkins: checkins ?? [],
     top3: top3 ?? [],
-    whoopWorkouts: whoopWorkouts ?? [],
+    whoopWorkouts: whoopError ? [] : whoopWorkouts ?? [],
   }
 }
 
-export async function saveWeeklyReview(userId: string, form: ReviewForm) {
-  const { start, end } = currentWeekBounds()
+export async function saveWeeklyReview(userId: string, form: ReviewForm, weekDate = new Date()) {
+  const { start, end } = currentWeekBounds(weekDate)
   const { error } = await client().from('weekly_reviews').upsert({
     user_id: userId,
     week_start: start,

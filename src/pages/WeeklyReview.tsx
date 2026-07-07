@@ -1,5 +1,5 @@
 import { BarChart3, CalendarCheck, CalendarDays, Dumbbell, Save } from 'lucide-react'
-import { getISOWeek } from 'date-fns'
+import { addDays, endOfWeek, format, getISOWeek, startOfWeek } from 'date-fns'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { PageHeader } from '../components/PageHeader'
@@ -31,16 +31,29 @@ const trainingLabels: Record<string, string> = {
   nein: 'Kein Training',
 }
 
-function weekDates() {
-  const today = new Date()
-  const monday = new Date(today)
-  monday.setHours(12, 0, 0, 0)
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7))
+function weekDates(weekStart: string) {
+  const monday = new Date(`${weekStart}T12:00:00`)
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(monday)
     date.setDate(monday.getDate() + index)
-    return date.toISOString().slice(0, 10)
+    return format(date, 'yyyy-MM-dd')
   })
+}
+
+function weekOptions(year: number) {
+  let start = startOfWeek(new Date(year, 0, 4), { weekStartsOn: 1 })
+  const options: { label: string; start: string; end: string }[] = []
+  while (start.getFullYear() <= year || endOfWeek(start, { weekStartsOn: 1 }).getFullYear() <= year) {
+    const end = endOfWeek(start, { weekStartsOn: 1 })
+    options.push({
+      label: `KW ${String(getISOWeek(start)).padStart(2, '0')} · ${format(start, 'dd.MM.')} - ${format(end, 'dd.MM.')}`,
+      start: format(start, 'yyyy-MM-dd'),
+      end: format(end, 'yyyy-MM-dd'),
+    })
+    start = addDays(start, 7)
+    if (getISOWeek(start) === 1 && start.getFullYear() > year) break
+  }
+  return options
 }
 
 function displayDate(date: string) {
@@ -58,6 +71,9 @@ function workoutLabel(workout: ReviewWorkout) {
 
 export function WeeklyReview() {
   const { user } = useAuth()
+  const currentWeekStart = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [selectedWeekStart, setSelectedWeekStart] = useState(currentWeekStart)
   const [form, setForm] = useState<ReviewForm>(emptyForm)
   const [checkins, setCheckins] = useState<Record<string, unknown>[]>([])
   const [top3, setTop3] = useState<Record<string, unknown>[]>([])
@@ -65,11 +81,15 @@ export function WeeklyReview() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-  const week = `KW ${getISOWeek(new Date())}`
+  const selectedWeekDate = useMemo(() => new Date(`${selectedWeekStart}T12:00:00`), [selectedWeekStart])
+  const weeks = useMemo(() => weekOptions(selectedYear), [selectedYear])
+  const week = `KW ${String(getISOWeek(selectedWeekDate)).padStart(2, '0')} · ${selectedYear}`
 
   useEffect(() => {
     if (!user) return
-    void loadWeeklyReview(user.id)
+    setError('')
+    setMessage('')
+    void loadWeeklyReview(user.id, selectedWeekDate)
       .then((result) => {
         setForm(result.form)
         setCheckins(result.checkins)
@@ -77,7 +97,7 @@ export function WeeklyReview() {
         setWhoopWorkouts((result.whoopWorkouts ?? []) as ReviewWorkout[])
       })
       .catch(() => setError('Wochenreview konnte nicht geladen werden.'))
-  }, [user])
+  }, [user, selectedWeekDate])
 
   const top3ByDate = useMemo(() => new Map(top3.map((item) => [String(item.date), item])), [top3])
   const checkinsByDate = useMemo(() => new Map(checkins.map((item) => [String(item.date), item])), [checkins])
@@ -91,7 +111,7 @@ export function WeeklyReview() {
     return grouped
   }, [whoopWorkouts])
 
-  const dayRows = useMemo(() => weekDates().map((date) => {
+  const dayRows = useMemo(() => weekDates(selectedWeekStart).map((date) => {
     const checkin = checkinsByDate.get(date)
     const top = top3ByDate.get(date)
     const workouts = workoutsByDate.get(date) ?? []
@@ -105,7 +125,7 @@ export function WeeklyReview() {
       ? trainingLabels[checkin.training_type] ?? checkin.training_type
       : ''
     return { date, checkin, top, topItems, completedTop3, workouts, checkinTraining }
-  }), [checkinsByDate, top3ByDate, workoutsByDate])
+  }), [checkinsByDate, selectedWeekStart, top3ByDate, workoutsByDate])
 
   const summaries = useMemo(() => {
     const cigarettes = checkins.map((item) => item.cigarettes).filter((value): value is number => typeof value === 'number')
@@ -132,12 +152,29 @@ export function WeeklyReview() {
     event.preventDefault()
     if (!user) return
     setSaving(true); setError(''); setMessage('')
-    try { await saveWeeklyReview(user.id, form); setMessage('Wochenreview wurde gespeichert.') } catch { setError('Review konnte nicht gespeichert werden.') } finally { setSaving(false) }
+    try { await saveWeeklyReview(user.id, form, selectedWeekDate); setMessage('Wochenreview wurde gespeichert.') } catch { setError('Review konnte nicht gespeichert werden.') } finally { setSaving(false) }
   }
 
   return (
     <>
-      <PageHeader eyebrow={week} title="Wochenreview" description="Die Woche ansehen, ohne mit ihr zu verhandeln. Erkennen, entscheiden, neu ausrichten." />
+      <PageHeader
+        action={<div className="flex flex-col gap-2 sm:flex-row">
+          <select className="rounded-xl border border-line bg-control-surface px-4 py-3 text-sm font-bold outline-none focus:border-accent" onChange={(event) => {
+            const nextYear = Number(event.target.value)
+            const nextWeeks = weekOptions(nextYear)
+            setSelectedYear(nextYear)
+            setSelectedWeekStart(nextWeeks.find((item) => item.start === selectedWeekStart)?.start ?? nextWeeks[0]?.start ?? selectedWeekStart)
+          }} value={selectedYear}>
+            {[selectedYear - 1, selectedYear, selectedYear + 1].map((year) => <option key={year} value={year}>{year}</option>)}
+          </select>
+          <select className="rounded-xl border border-line bg-control-surface px-4 py-3 text-sm font-bold outline-none focus:border-accent" onChange={(event) => setSelectedWeekStart(event.target.value)} value={selectedWeekStart}>
+            {weeks.map((item) => <option key={item.start} value={item.start}>{item.label}</option>)}
+          </select>
+        </div>}
+        eyebrow={week}
+        title="Wochenreview"
+        description="Die Woche ansehen, ohne mit ihr zu verhandeln. Erkennen, entscheiden, neu ausrichten."
+      />
       <div className="grid gap-5 xl:grid-cols-[0.8fr_1.2fr]">
         <div className="space-y-5">
           <Panel>
