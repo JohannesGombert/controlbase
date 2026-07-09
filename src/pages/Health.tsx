@@ -1,4 +1,4 @@
-import { Activity, Apple, HeartPulse, Moon, Plus, Save, Scale, Target, Zap } from 'lucide-react'
+import { Activity, Apple, HeartPulse, Moon, Plus, Save, Scale, Target, TrendingDown, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -205,7 +205,8 @@ export function Health() {
     setLoading(true)
     void Promise.all([loadHealthProfile(user.id), loadWeightEntries(user.id), loadWhoopHealthData(user.id)])
       .then(([profile, weights, whoop]) => {
-        setForm(profile)
+        const latestWeight = weights.at(-1)
+        setForm(latestWeight ? { ...profile, currentWeight: String(Number(latestWeight.weight)) } : profile)
         setEntries(weights)
         setWhoopDaily(whoop.daily)
         setWhoopWorkouts(whoop.workouts)
@@ -237,6 +238,13 @@ export function Health() {
   const trend = useMemo(() => {
     const recent = entries.slice(-7)
     return recent.length ? recent.reduce((sum, item) => sum + Number(item.weight), 0) / recent.length : null
+  }, [entries])
+  const trackingLoss = useMemo(() => {
+    if (entries.length < 2) return null
+    const first = Number(entries[0].weight)
+    const latest = Number(entries.at(-1)?.weight)
+    if (!Number.isFinite(first) || !Number.isFinite(latest)) return null
+    return { change: first - latest, first, latest, startDate: entries[0].measured_on }
   }, [entries])
 
   const submit = async (event: FormEvent) => {
@@ -275,10 +283,11 @@ export function Health() {
       />
       {loading ? <Panel><p className="text-sm text-muted">Profil wird geladen ...</p></Panel> : (
         <form className="space-y-5" onSubmit={submit}>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Panel className="p-4 sm:p-5"><Scale className="text-accent" size={19} /><p className="mt-4 text-xs font-semibold text-muted">Aktuelles Gewicht</p><p className="mt-1 font-display text-3xl font-semibold">{form.currentWeight || '-'} <span className="text-base">kg</span></p></Panel>
             <Panel className="p-4 sm:p-5"><Target className="text-positive" size={19} /><p className="mt-4 text-xs font-semibold text-muted">Zielgewicht</p><p className="mt-1 font-display text-3xl font-semibold">{form.targetWeight || '-'} <span className="text-base">kg</span></p></Panel>
             <Panel className="p-4 sm:p-5"><Activity className="text-blue" size={19} /><p className="mt-4 text-xs font-semibold text-muted">Orientierungszeitraum</p><p className="mt-1 font-display text-3xl font-semibold">{projection || '-'} <span className="text-base">Wochen</span></p></Panel>
+            <Panel className="p-4 sm:p-5"><TrendingDown className="text-positive" size={19} /><p className="mt-4 text-xs font-semibold text-muted">Seit Tracking-Start</p><p className="mt-1 font-display text-3xl font-semibold">{trackingLoss ? `${Math.abs(trackingLoss.change).toFixed(1)}` : '-'} <span className="text-base">kg</span></p><p className="mt-1 text-xs text-muted">{trackingLoss ? trackingLoss.change >= 0 ? `abgenommen seit ${new Date(`${trackingLoss.startDate}T12:00:00`).toLocaleDateString('de-CH')}` : 'zugenommen seit Start' : 'noch nicht genug Werte'}</p></Panel>
           </div>
           <div className="grid gap-5 xl:grid-cols-[1.35fr_0.8fr]">
             <Panel><SectionTitle title="Gewichtstrend" description="Der 7-Tage-Durchschnitt glaettet normale taegliche Schwankungen." /><div className="mb-4 flex gap-2"><input aria-label="Heutiges Gewicht" className="min-w-0 flex-1 rounded-xl border border-line bg-soft px-3.5 py-3 text-sm" min="30" onChange={(event) => setNewWeight(event.target.value)} placeholder="Heutiges Gewicht in kg" step="0.1" type="number" value={newWeight} /><button className="inline-flex items-center gap-2 rounded-xl bg-control-deep px-4 text-sm font-bold text-white" onClick={() => void addWeight()} type="button"><Plus size={16} /> Eintragen</button></div>{entries.length ? <div className="h-56"><ResponsiveContainer height="100%" width="100%"><LineChart data={entries}><XAxis dataKey="measured_on" fontSize={11} tickFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit' })} /><YAxis domain={['dataMin - 1', 'dataMax + 1']} fontSize={11} width={42} /><Tooltip formatter={(value) => [`${Number(value).toFixed(1)} kg`, 'Gewicht']} labelFormatter={(value) => new Date(`${value}T12:00:00`).toLocaleDateString('de-CH')} /><Line dataKey="weight" dot={{ r: 3 }} stroke="#00D4FF" strokeWidth={2} type="monotone" /></LineChart></ResponsiveContainer></div> : <p className="py-16 text-center text-sm text-muted">Trage dein erstes Gewicht ein.</p>}<p className="mt-3 text-sm font-semibold text-accent">7-Tage-Trend: {trend ? `${trend.toFixed(1)} kg` : 'noch nicht verfuegbar'}</p></Panel>

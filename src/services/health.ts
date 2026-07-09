@@ -43,6 +43,12 @@ export async function loadWeightEntries(userId: string): Promise<WeightEntry[]> 
 }
 
 export async function saveWeightEntry(userId: string, measuredOn: string, weight: number) {
-  const { error } = await client().from('health_weight_entries').upsert({ user_id: userId, measured_on: measuredOn, weight }, { onConflict: 'user_id,measured_on' })
-  if (error) throw error
+  const [{ error: weightError }, { error: checkinError }, { error: profileError }] = await Promise.all([
+    client().from('health_weight_entries').upsert({ user_id: userId, measured_on: measuredOn, weight }, { onConflict: 'user_id,measured_on' }),
+    client().from('daily_checkins').upsert({ user_id: userId, date: measuredOn, weight }, { onConflict: 'user_id,date' }),
+    client().from('health_profiles').update({ current_weight: weight }).eq('user_id', userId),
+  ])
+  if (weightError) throw weightError
+  if (checkinError) throw checkinError
+  if (profileError) throw profileError
 }

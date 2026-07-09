@@ -83,7 +83,7 @@ export function currentWeekBounds(date = new Date()) {
 export async function loadToday(userId: string): Promise<TodayForm> {
   const date = localDateKey()
   const nextDay = format(new Date(new Date(`${date}T12:00:00`).getTime() + 24 * 60 * 60 * 1000), 'yyyy-MM-dd')
-  const [{ data: checkin, error: checkinError }, { data: top3, error: top3Error }, { data: workouts, error: workoutError }] = await Promise.all([
+  const [{ data: checkin, error: checkinError }, { data: top3, error: top3Error }, { data: workouts, error: workoutError }, { data: weightEntry, error: weightEntryError }] = await Promise.all([
     client().from('daily_checkins').select('*').eq('user_id', userId).eq('date', date).maybeSingle(),
     client().from('daily_top3').select('*').eq('user_id', userId).eq('date', date).maybeSingle(),
     client()
@@ -93,15 +93,17 @@ export async function loadToday(userId: string): Promise<TodayForm> {
       .gte('start_time', new Date(`${date}T00:00:00`).toISOString())
       .lt('start_time', new Date(`${nextDay}T00:00:00`).toISOString())
       .order('start_time', { ascending: true }),
+    client().from('health_weight_entries').select('weight').eq('user_id', userId).eq('measured_on', date).maybeSingle(),
   ])
   if (checkinError) throw checkinError
   if (top3Error) throw top3Error
+  if (weightEntryError) throw weightEntryError
   const whoopWorkouts = workoutError ? [] : (workouts ?? []) as TodayWhoopWorkout[]
   const mappedTrainingTypes = Array.from(new Set(whoopWorkouts.map((workout) => workout.training_type).filter((value): value is string => Boolean(value))))
   const automaticTrainingType = mappedTrainingTypes.length > 1 ? 'mehrere' : mappedTrainingTypes[0]
 
   return {
-    weight: checkin?.weight?.toString() ?? '',
+    weight: checkin?.weight?.toString() ?? weightEntry?.weight?.toString() ?? '',
     sleepQuality: checkin?.sleep_quality ?? '',
     businessTask: top3?.business_task ?? '',
     healthTask: top3?.health_task ?? '',
@@ -121,7 +123,7 @@ export async function saveToday(userId: string, form: TodayForm) {
   const date = localDateKey()
   const weight = nullableNumber(form.weight)
   const completedTasks = [form.businessTask, form.healthTask, form.privateTask].filter((task) => task.trim()).length
-  const [{ error: checkinError }, { error: top3Error }, { error: weightError }] = await Promise.all([
+  const [{ error: checkinError }, { error: top3Error }, { error: weightError }, { error: profileError }] = await Promise.all([
     client().from('daily_checkins').upsert({
       user_id: userId,
       date,
@@ -154,10 +156,14 @@ export async function saveToday(userId: string, form: TodayForm) {
         weight,
         notes: 'Automatisch aus dem Morgencheck übernommen.',
       }, { onConflict: 'user_id,measured_on' }),
+    weight === null
+      ? Promise.resolve({ error: null })
+      : client().from('health_profiles').update({ current_weight: weight }).eq('user_id', userId),
   ])
   if (checkinError) throw checkinError
   if (top3Error) throw top3Error
   if (weightError) throw weightError
+  if (profileError) throw profileError
 }
 
 export async function listPurchases(userId: string): Promise<Purchase[]> {
