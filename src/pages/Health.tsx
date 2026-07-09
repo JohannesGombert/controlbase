@@ -1,4 +1,4 @@
-import { Activity, Apple, HeartPulse, Moon, Plus, Save, Scale, Target, TrendingDown, Zap } from 'lucide-react'
+import { Activity, Apple, ChevronDown, ChevronUp, HeartPulse, Moon, Plus, Save, Scale, Target, TrendingDown, Zap } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -54,6 +54,7 @@ function WhoopPanel({
   const latest = daily.at(-1)
   const [savingWorkoutId, setSavingWorkoutId] = useState<string | null>(null)
   const [workoutError, setWorkoutError] = useState('')
+  const [showWorkouts, setShowWorkouts] = useState(false)
   const chartData = daily.map((item) => ({
     date: item.date,
     recovery: item.recovery_score ?? null,
@@ -145,9 +146,12 @@ function WhoopPanel({
                 <h3 className="font-display text-xl font-semibold">Letzte Workouts</h3>
                 <p className="text-sm text-muted">Jede WHOOP-Session kann einzeln als Training eingeordnet werden.</p>
               </div>
-              <p className="text-xs font-bold uppercase tracking-wider text-muted">{workouts.length} Sessions</p>
+              <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-soft px-4 py-2.5 text-sm font-bold" onClick={() => setShowWorkouts((current) => !current)} type="button">
+                {showWorkouts ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {showWorkouts ? 'Einklappen' : `Anzeigen (${workouts.length})`}
+              </button>
             </div>
-            {workouts.length ? (
+            {showWorkouts && workouts.length ? (
               <div className="mt-3 divide-y divide-line">
                 {workouts.map((workout) => (
                   <div className="grid gap-3 py-3 text-sm lg:grid-cols-[1.1fr_0.8fr_0.45fr_0.45fr_0.45fr]" key={workout.id}>
@@ -173,9 +177,9 @@ function WhoopPanel({
                   </div>
                 ))}
               </div>
-            ) : (
+            ) : showWorkouts ? (
               <p className="mt-3 text-sm text-muted">Noch keine Workouts synchronisiert.</p>
-            )}
+            ) : null}
             {workoutError && <p className="mt-3 rounded-xl bg-status-danger/10 p-3 text-sm font-semibold text-status-danger">{workoutError}</p>}
           </div>
         </>

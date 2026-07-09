@@ -1,4 +1,4 @@
-import { BarChart3, CalendarCheck, CalendarDays, Dumbbell, Save } from 'lucide-react'
+import { BarChart3, CalendarCheck, CalendarDays, ChevronDown, ChevronUp, Dumbbell, Save } from 'lucide-react'
 import { addDays, endOfWeek, format, getISOWeek, startOfWeek } from 'date-fns'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../auth/AuthProvider'
@@ -81,6 +81,7 @@ export function WeeklyReview() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [showTodayOverview, setShowTodayOverview] = useState(false)
   const selectedWeekDate = useMemo(() => new Date(`${selectedWeekStart}T12:00:00`), [selectedWeekStart])
   const weeks = useMemo(() => weekOptions(selectedYear), [selectedYear])
   const week = `KW ${String(getISOWeek(selectedWeekDate)).padStart(2, '0')} · ${selectedYear}`
@@ -199,8 +200,14 @@ export function WeeklyReview() {
       </div>
 
       <Panel className="mt-5">
-        <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-soft text-accent"><CalendarDays size={19} /></span><SectionTitle title="Heute-Uebersicht" description="Alle erfassten Tage dieser Woche mit Ergebnissen, Check-in und WHOOP-Training." /></div>
-        <div className="mt-4 divide-y divide-line">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-soft text-accent"><CalendarDays size={19} /></span><SectionTitle title="Heute-Uebersicht" description="Alle erfassten Tage dieser Woche mit Ergebnissen, Check-in und WHOOP-Training." /></div>
+          <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-control-surface px-4 py-2.5 text-sm font-bold" onClick={() => setShowTodayOverview((current) => !current)} type="button">
+            {showTodayOverview ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {showTodayOverview ? 'Einklappen' : `Anzeigen (${dayRows.filter((day) => day.checkin || day.top || day.workouts.length).length}/7)`}
+          </button>
+        </div>
+        {showTodayOverview ? <div className="mt-4 divide-y divide-line">
           {dayRows.map((day) => (
             <div className="grid gap-3 py-4 lg:grid-cols-[0.35fr_1fr_1fr_1fr]" key={day.date}>
               <div>
@@ -229,7 +236,7 @@ export function WeeklyReview() {
               </div>
             </div>
           ))}
-        </div>
+        </div> : null}
       </Panel>
     </>
   )
